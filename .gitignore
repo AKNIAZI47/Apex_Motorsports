@@ -1,0 +1,21 @@
+# Maven / Java build outputs
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Generated/temporary build files
+effective-pom
+effective-pom.xml
+
+# Local runtime/config secrets
+src/main/resources/config.properties
+
+# IDE/editor metadata
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
