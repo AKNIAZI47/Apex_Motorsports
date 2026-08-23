@@ -25,11 +25,11 @@ export const RaceDetailModal: React.FC<Props> = ({ race, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#0d0d1f] border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#121215] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#16213e] to-[#0d0d1f] border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#18181b] border-b border-white/10">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#e8002d] tracking-wider uppercase">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#ff1744] tracking-wider uppercase">
               <span>Round {race.round}</span>
               <span>•</span>
               <span>{race.season} Season</span>
@@ -39,7 +39,7 @@ export const RaceDetailModal: React.FC<Props> = ({ race, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -167,7 +167,7 @@ export const RaceDetailModal: React.FC<Props> = ({ race, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3 bg-[#080812] border-t border-white/10 text-xs text-slate-400">
+        <div className="flex items-center justify-between px-6 py-3 bg-[#09090b] border-t border-white/10 text-xs text-slate-400">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-purple-500"></span> FL = Fastest Lap bonus point
@@ -175,7 +175,7 @@ export const RaceDetailModal: React.FC<Props> = ({ race, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-medium transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-medium transition-colors cursor-pointer"
           >
             Close
           </button>

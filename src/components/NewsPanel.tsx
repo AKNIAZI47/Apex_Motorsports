@@ -135,7 +135,7 @@ export const NewsPanel: React.FC = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d1f] via-transparent to-black/40" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#121215] via-transparent to-black/40" />
 
                     {/* Top Badges */}
                     <div className="absolute top-3 left-3 flex gap-1.5">
@@ -233,7 +233,7 @@ export const NewsPanel: React.FC = () => {
               <a
                 href={readingArticle.url}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[#ff1744] hover:underline"
               >
                 Open Source Wire <ExternalLink className="w-3.5 h-3.5" />

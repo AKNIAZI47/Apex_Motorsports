@@ -1,89 +1,123 @@
-import React, { useEffect, useState } from 'react';
-import { Shield, Trophy, Wrench, Users, MapPin, Gauge, Cpu } from 'lucide-react';
-import { Constructor, ConstructorStanding, Driver } from '../types';
-import { JolpicaService } from '../services/jolpica';
-import { CONSTRUCTORS, DRIVERS } from '../data/fallbackF1Data';
+import React, { useState, useMemo } from 'react';
+import { Shield, Trophy, Wrench, Users, Gauge, Cpu, Flame } from 'lucide-react';
+import { Constructor, Driver, MotorsportCategory } from '../types';
+import { getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
+import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
 
 interface Props {
   onSelectDriver?: (driver: Driver) => void;
 }
 
-export const ConstructorProfile: React.FC<Props> = ({ onSelectDriver }) => {
-  const years = JolpicaService.getAvailableYears();
-  const [selectedYear, setSelectedYear] = useState<number>(2024);
-  const [standings, setStandings] = useState<ConstructorStanding[]>([]);
-  const [selectedCtor, setSelectedCtor] = useState<Constructor>(CONSTRUCTORS.mclaren);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [loading, setLoading] = useState(true);
+const CATEGORY_CHIPS: { id: MotorsportCategory; label: string; color: string }[] = [
+  { id: 'F1', label: 'Formula 1', color: '#e8002d' },
+  { id: 'MOTOGP', label: 'MotoGP', color: '#dc2626' },
+  { id: 'WSBK', label: 'WorldSBK', color: '#0284c7' },
+  { id: 'WEC', label: 'WEC Hypercar', color: '#0072ce' },
+  { id: 'WRC', label: 'WRC Rally', color: '#ff9800' },
+  { id: 'INDYCAR', label: 'IndyCar', color: '#0284c7' },
+  { id: 'SUPERCARS', label: 'Supercars V8', color: '#2563eb' },
+  { id: 'DTM', label: 'DTM GT3', color: '#e11d48' },
+  { id: 'DRIFT', label: 'Formula Drift', color: '#10b981' },
+];
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      JolpicaService.getConstructorStandings(selectedYear),
-      JolpicaService.getDriversForSeason(selectedYear),
-    ]).then(([ctorData, driverData]) => {
-      setStandings(ctorData);
-      setDrivers(driverData);
-      if (ctorData.length > 0) {
-        const found = ctorData.find((c) => c.constructor.constructorId === selectedCtor.constructorId);
-        if (!found) {
-          setSelectedCtor(ctorData[0].constructor);
-        }
-      }
-      setLoading(false);
-    });
-  }, [selectedYear]);
+export const ConstructorProfile: React.FC<Props> = ({ onSelectDriver }) => {
+  const [selectedCategory, setSelectedCategory] = useState<MotorsportCategory>('F1');
+  const [selectedCtorId, setSelectedCtorId] = useState<string>('');
+
+  const seasonData = useMemo(() => {
+    return getCategoryStandings(selectedCategory, CURRENT_YEAR);
+  }, [selectedCategory]);
+
+  const standings = seasonData.constructorStandings;
+  const drivers = seasonData.driverStandings;
+
+  const selectedCtor = useMemo(() => {
+    if (selectedCtorId) {
+      const found = standings.find((s) => s.constructor.constructorId === selectedCtorId);
+      if (found) return found.constructor;
+    }
+    return standings[0]?.constructor;
+  }, [standings, selectedCtorId]);
 
   const currentStanding = standings.find(
-    (c) => c.constructor.constructorId === selectedCtor.constructorId
+    (c) => c.constructor.constructorId === selectedCtor?.constructorId
   );
 
-  // Find drivers that belong to this constructor
+  // Find drivers belonging to this constructor
   const teamDrivers = drivers.filter(
     (d) =>
-      d.constructorId === selectedCtor.constructorId ||
-      d.constructorName?.toLowerCase().includes(selectedCtor.name.toLowerCase().split(' ')[0])
+      d.constructors.some((c) => c.constructorId === selectedCtor?.constructorId) ||
+      d.driver.constructorName?.toLowerCase().includes(selectedCtor?.name.toLowerCase().split(' ')[0] || '')
   );
+
+  const catMeta = MOTORSPORT_CATEGORIES[selectedCategory];
+  const teamColor = selectedCtor?.color || catMeta?.badgeColor || '#e8002d';
+
+  if (!selectedCtor) {
+    return (
+      <div className="p-12 text-center text-slate-400">
+        No constructor profile loaded.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-[#121228] to-[#0d0d1f] border border-white/10 rounded-xl">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#e8002d] tracking-widest uppercase">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-[#121215] border border-white/10 rounded-2xl shadow-xl relative overflow-hidden">
+        <div 
+          className="absolute -right-20 -top-20 w-80 h-80 rounded-full blur-3xl opacity-10 pointer-events-none"
+          style={{ backgroundColor: teamColor }}
+        />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#ff1744] tracking-widest uppercase">
             <Shield className="w-3.5 h-3.5" />
-            <span>Constructor Technical Bureau</span>
+            <span>2026 World Championship Constructor Technical Bureau</span>
           </div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight mt-1">
+          <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mt-1">
             Constructor Championship Profiles
           </h2>
           <p className="text-sm text-slate-400">
-            Technical specs, powertrain architecture, car models, and driver pairings
+            Technical specs, powertrain architecture, car models, and driver pairings across all 9 disciplines
           </p>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 bg-[#16213e] border border-white/10 rounded-lg px-3 py-1.5 self-start sm:self-auto">
-          <span className="text-xs font-semibold text-slate-400 uppercase">Season:</span>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer"
-          >
-            {years.map((y) => (
-              <option key={y} value={y} className="bg-[#0d0d1f]">
-                {y} Season
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Category Chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+        {CATEGORY_CHIPS.map((chip) => {
+          const isSelected = selectedCategory === chip.id;
+          return (
+            <button
+              key={chip.id}
+              onClick={() => {
+                setSelectedCategory(chip.id);
+                setSelectedCtorId('');
+              }}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
+                isSelected
+                  ? 'bg-gradient-to-r from-[#e8002d]/20 to-white/10 border-[#ff1744] text-white shadow-lg shadow-[#ff1744]/10'
+                  : 'bg-[#121215] border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: chip.color }}
+              />
+              <span>{chip.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 2-Column Split: Constructor List & Team Overview */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Left Team Selector */}
-        <div className="md:col-span-4 bg-[#0d0d1f] border border-white/10 rounded-xl overflow-hidden flex flex-col max-h-[720px]">
-          <div className="p-3.5 bg-[#16213e]/60 border-b border-white/10 text-xs font-bold text-slate-400 uppercase tracking-wider">
-            {selectedYear} Constructors ({standings.length})
+        <div className="md:col-span-4 bg-[#121215] border border-white/10 rounded-2xl overflow-hidden flex flex-col max-h-[720px] shadow-xl">
+          <div className="p-3.5 bg-[#18181b] border-b border-white/10 text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between">
+            <span>{selectedCategory} Constructors</span>
+            <span className="font-mono text-emerald-400">{standings.length} Teams</span>
           </div>
 
           <div className="overflow-y-auto divide-y divide-white/5 flex-1">
@@ -94,32 +128,35 @@ export const ConstructorProfile: React.FC<Props> = ({ onSelectDriver }) => {
               return (
                 <button
                   key={c.constructorId}
-                  onClick={() => setSelectedCtor(c)}
-                  className={`w-full text-left p-3.5 flex items-center justify-between transition-colors ${
+                  onClick={() => setSelectedCtorId(c.constructorId)}
+                  className={`w-full text-left p-3.5 flex items-center justify-between transition-colors cursor-pointer ${
                     isSelected
                       ? 'bg-white/10 border-l-4 border-[#e8002d]'
                       : 'hover:bg-white/[0.03]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="w-5 font-mono text-xs text-slate-400 font-bold">
-                      {s.position}
-                    </span>
                     <div
-                      className="w-2.5 h-6 rounded-md"
-                      style={{ backgroundColor: c.color || '#888' }}
+                      className="w-2.5 h-8 rounded-full"
+                      style={{ backgroundColor: c.color || '#e8002d' }}
                     />
                     <div>
-                      <div className="font-bold text-sm text-white">{c.name}</div>
-                      <div className="text-xs text-slate-400">{c.nationality}</div>
+                      <div className="font-bold text-sm text-white">
+                        {c.name}
+                      </div>
+                      <div className="text-xs text-slate-400 font-mono">
+                        {c.carModel || c.nationality}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="font-mono font-bold text-xs text-white">{s.points} pts</div>
-                    {s.wins > 0 && (
-                      <div className="text-[10px] text-amber-400 font-bold">{s.wins} wins</div>
-                    )}
+                  <div className="text-right font-mono">
+                    <div className="text-sm font-black text-white">
+                      {s.points} PTS
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      P{s.position} • {s.wins} Wins
+                    </div>
                   </div>
                 </button>
               );
@@ -127,131 +164,148 @@ export const ConstructorProfile: React.FC<Props> = ({ onSelectDriver }) => {
           </div>
         </div>
 
-        {/* Right Detail Pane */}
+        {/* Right Constructor Detail View */}
         <div className="md:col-span-8 space-y-6">
-          {/* Hero Banner with Team Color Glow */}
-          <div className="relative bg-[#0d0d1f] border border-white/10 rounded-xl p-6 sm:p-8 overflow-hidden">
+          {/* Main Hero Card */}
+          <div className="relative bg-[#121215] border border-white/10 rounded-2xl p-6 sm:p-8 overflow-hidden shadow-2xl">
             <div
-              className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none -mr-20 -mt-20"
-              style={{ backgroundColor: selectedCtor.color || '#e8002d' }}
+              className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-10 pointer-events-none -mr-20 -mt-20"
+              style={{ backgroundColor: teamColor }}
             />
 
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-6 relative z-10">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-4 h-8 rounded-md"
-                    style={{ backgroundColor: selectedCtor.color || '#e8002d' }}
-                  />
-                  <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-white/10 text-slate-300">
-                    {selectedCtor.nationality}
-                  </span>
-                  {selectedCtor.carModel && (
-                    <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-[#e8002d]/20 text-[#ff4d6d] border border-[#e8002d]/30">
-                      Chassis: {selectedCtor.carModel}
-                    </span>
-                  )}
-                </div>
-
-                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  {selectedCtor.name}
-                </h1>
-                <p className="text-sm text-slate-400 mt-1">
-                  Formula One World Constructors Championship Contender
-                </p>
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center gap-2">
+                <span 
+                  className="px-2.5 py-0.5 rounded text-xs font-black tracking-widest uppercase font-mono"
+                  style={{ 
+                    backgroundColor: `${teamColor}22`,
+                    color: teamColor
+                  }}
+                >
+                  {selectedCategory} Factory Team
+                </span>
+                <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300 text-xs font-mono">
+                  {selectedCtor.nationality}
+                </span>
               </div>
 
-              {/* Standings Badge */}
-              <div className="text-right shrink-0 bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-xs font-semibold text-slate-400 uppercase">Season Standing</div>
-                <div className="text-3xl font-black font-mono text-white mt-0.5">
-                  P{currentStanding?.position || '—'}
-                </div>
-                <div className="text-xs font-mono font-bold text-[#e8002d]">
-                  {currentStanding?.points || 0} PTS
-                </div>
-              </div>
-            </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
+                {selectedCtor.name}
+              </h2>
 
-            {/* Technical Specifications Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
-              <div className="flex items-start gap-3">
-                <Cpu className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-semibold text-slate-400 uppercase">Power Unit</div>
-                  <div className="text-sm font-bold text-white mt-0.5">
-                    {selectedCtor.powerUnit || '1.6L V6 Turbo Hybrid'}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/10">
+                <div className="bg-[#18181b] p-3 rounded-xl border border-white/5">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Trophy className="w-3 h-3 text-amber-400" />
+                    <span>2026 Points</span>
+                  </div>
+                  <div className="text-2xl font-black font-mono text-white mt-1">
+                    {currentStanding?.points ?? '0'}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">
+                    Championship Rank P{currentStanding?.position ?? '-'}
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <Users className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-semibold text-slate-400 uppercase">Team Principal</div>
-                  <div className="text-sm font-bold text-white mt-0.5">
-                    {selectedCtor.teamPrincipal || 'Team Leadership'}
+                <div className="bg-[#18181b] p-3 rounded-xl border border-white/5">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Flame className="w-3 h-3 text-red-500" />
+                    <span>2026 Wins</span>
                   </div>
+                  <div className="text-2xl font-black font-mono text-white mt-1">
+                    {currentStanding?.wins ?? '0'}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">Victories</div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-semibold text-slate-400 uppercase">Headquarters</div>
-                  <div className="text-sm font-bold text-white mt-0.5">
-                    {selectedCtor.headquarters || 'Europe'}
+                <div className="bg-[#18181b] p-3 rounded-xl border border-white/5">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Shield className="w-3 h-3 text-indigo-400" />
+                    <span>Titles</span>
+                  </div>
+                  <div className="text-2xl font-black font-mono text-white mt-1">
+                    {selectedCtor.championships ?? 0}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">Championships</div>
+                </div>
+
+                <div className="bg-[#18181b] p-3 rounded-xl border border-white/5">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3 h-3 text-emerald-400" />
+                    <span>Team Principal</span>
+                  </div>
+                  <div className="text-sm font-bold text-white mt-2 truncate">
+                    {selectedCtor.teamPrincipal || 'Factory Management'}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Driver Lineup Cards */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#e8002d]" />
-              <span>Official Driver Lineup</span>
-            </h3>
+          {/* Technical Specifications */}
+          <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <Gauge className="w-4 h-4 text-[#ff1744]" />
+              <span>2026 Vehicle & Engine Specifications</span>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {teamDrivers.length > 0 ? (
-                teamDrivers.map((driver) => (
+              <div className="bg-[#18181b] p-4 rounded-xl border border-white/5">
+                <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                  <Wrench className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Car / Chassis Model</span>
+                </div>
+                <div className="text-base font-bold text-white mt-1.5">
+                  {selectedCtor.carModel || `${selectedCtor.name} Spec-2026`}
+                </div>
+              </div>
+
+              <div className="bg-[#18181b] p-4 rounded-xl border border-white/5">
+                <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Power Unit & Powertrain</span>
+                </div>
+                <div className="text-sm font-bold text-emerald-400 mt-1.5 font-mono">
+                  {selectedCtor.powerUnit || 'Competition High Output Power Unit'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Driver Lineup */}
+          <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <Users className="w-4 h-4 text-[#ff1744]" />
+                <span>2026 Driver Lineup</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {teamDrivers.map((standing) => {
+                const d = standing.driver;
+                return (
                   <div
-                    key={driver.driverId}
-                    onClick={() => onSelectDriver?.(driver)}
-                    className="bg-[#0d0d1f] hover:bg-[#121228] border border-white/10 hover:border-white/20 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all hover:scale-[1.01]"
+                    key={d.driverId}
+                    onClick={() => onSelectDriver && onSelectDriver(d)}
+                    className="p-4 bg-[#18181b] border border-white/5 rounded-xl flex items-center justify-between hover:bg-white/[0.05] transition-all cursor-pointer group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10">
-                        {driver.headshotUrl ? (
-                          <img
-                            src={driver.headshotUrl}
-                            alt={driver.fullName}
-                            className="w-full h-full object-contain"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <span className="font-mono font-bold text-sm text-white">
-                            {driver.code}
-                          </span>
-                        )}
+                    <div>
+                      <div className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
+                        <span>#{d.permanentNumber || d.driverNumber}</span>
+                        <span>•</span>
+                        <span>{d.nationality}</span>
                       </div>
-                      <div>
-                        <div className="text-xs font-mono font-bold text-[#e8002d]">
-                          #{driver.driverNumber || driver.permanentNumber} • {driver.code}
-                        </div>
-                        <div className="font-bold text-white text-base">{driver.fullName}</div>
-                        <div className="text-xs text-slate-400">{driver.nationality}</div>
+                      <div className="text-base font-bold text-white group-hover:text-[#ff1744] transition-colors mt-0.5">
+                        {d.fullName}
+                      </div>
+                      <div className="text-xs font-mono text-emerald-400 mt-1">
+                        {standing.points} PTS • P{standing.position}
                       </div>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="col-span-2 text-center py-8 text-slate-500 bg-[#0d0d1f] border border-white/10 rounded-xl">
-                  Lineup data syncing for this constructor.
-                </div>
-              )}
+                );
+              })}
             </div>
           </div>
         </div>

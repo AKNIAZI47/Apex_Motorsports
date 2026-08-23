@@ -33,7 +33,7 @@ const MOTORSPORTS_SYSTEM_INSTRUCTION = `You are "Apex Motorsports AI" — the pr
 CORE CAPABILITIES & MULTI-DISCIPLINE MOTORSPORT SCOPE:
 You provide point-to-point technical engineering, historical race results, telemetry analysis, and regulations across ALL premier motorsport disciplines:
 
-1. FORMULA 1 (F1): 75-year Grand Prix history (1950–Present), ground effect aero, 1.6L V6 turbo-hybrids, 2026 engine & active aero rules (350kW MGU-K), telemetry traces, undercut/overcut physics, and driver rivalries (Senna, Prost, Schumacher, Hamilton, Verstappen).
+1. FORMULA 1 (F1): 75-year Grand Prix history (1950–Present), active aerodynamics, hybrid powertrains (350kW MGU-K), telemetry traces, undercut/overcut physics, and driver rivalries (Senna, Prost, Schumacher, Hamilton, Verstappen, Antonelli, Leclerc, Norris). Note: In 2026, Andrea Kimi Antonelli (Mercedes-AMG PETRONAS F1 Team #12) is leading the World Drivers' Championship with Mercedes-AMG leading the Constructors' Championship.
 2. WEC & 24-HOUR ENDURANCE (Le Mans, Nürburgring 24h, Daytona 24h, Spa 24h): Hypercars (Ferrari 499P, Porsche 963, Toyota GR010, Cadillac, BMW), LMGT3, Balance of Performance (BoP) weight/power curves, stint energy (MJ), multi-class traffic, and night racing stamina.
 3. FORMULA DRIFT & PRO DRIFTING: 1,000+ HP turbo/supercharged builds, 75° extreme drift angles, entry speeds (100+ mph at Irwindale "House of Drift"), clipping point accuracy, tandem lead/chase proximity, OMT rules, and angle telemetry.
 4. WRC (WORLD RALLY CHAMPIONSHIP): Rally1 hybrid beasts (500hp boost), gravel, snow, and tarmac stages (Monte Carlo, Finland jumps, Kenya Safari), co-driver pacenote codes, mechanical differentials, and Power Stage bonus points.
@@ -46,6 +46,13 @@ ACCURACY & FORMATTING:
 - Format responses cleanly with rich Markdown tables, bullet points, and high-performance racing terminology.`;
 
 // API routes
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
@@ -64,19 +71,32 @@ app.post("/api/ai/chat", async (req, res) => {
       customModel = ""
     } = req.body;
 
-    if (!message || typeof message !== "string") {
-      return res.status(400).json({ error: "A message string is required." });
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
+      return res.status(400).json({ error: "A non-empty message string is required." });
     }
+
+    // Input length limit check to mitigate DoS / prompt bombing
+    if (message.length > 4000) {
+      return res.status(400).json({ error: "Message exceeds maximum allowed length of 4000 characters." });
+    }
+
+    const safeHistory = Array.isArray(conversationHistory) 
+      ? conversationHistory.slice(-30).filter(h => h && typeof h.text === 'string' && typeof h.role === 'string')
+      : [];
 
     // 1. OLLAMA / LOCAL LLM MODE (ZERO LIMITS, 100% UNLIMITED)
     if (provider === "ollama") {
       try {
+        const parsedUrl = new URL(ollamaEndpoint);
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          throw new Error("Invalid Ollama protocol. Must be HTTP or HTTPS.");
+        }
         const targetUrl = `${ollamaEndpoint.replace(/\/$/, '')}/api/chat`;
         const ollamaMessages = [
           { role: "system", content: MOTORSPORTS_SYSTEM_INSTRUCTION },
-          ...conversationHistory.map((item: { role: string; text: string }) => ({
+          ...safeHistory.map((item: { role: string; text: string }) => ({
             role: item.role === "assistant" ? "assistant" : "user",
-            content: item.text,
+            content: item.text.substring(0, 4000),
           })),
           { role: "user", content: message },
         ];
@@ -84,8 +104,9 @@ app.post("/api/ai/chat", async (req, res) => {
         const ollamaRes = await fetch(targetUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(15000),
           body: JSON.stringify({
-            model: ollamaModel || "llama3",
+            model: String(ollamaModel || "llama3").replace(/[^a-zA-Z0-9_.:-]/g, ''),
             messages: ollamaMessages,
             stream: false,
           }),
@@ -108,27 +129,33 @@ app.post("/api/ai/chat", async (req, res) => {
     // 2. CUSTOM OPENAI-COMPATIBLE / OPENROUTER MODE
     if (provider === "custom" && customEndpoint) {
       try {
+        const parsedUrl = new URL(customEndpoint);
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          throw new Error("Invalid custom API protocol. Must be HTTP or HTTPS.");
+        }
+
         const targetUrl = customEndpoint.endsWith("/chat/completions") 
           ? customEndpoint 
           : `${customEndpoint.replace(/\/$/, '')}/chat/completions`;
 
         const customMessages = [
           { role: "system", content: MOTORSPORTS_SYSTEM_INSTRUCTION },
-          ...conversationHistory.map((item: { role: string; text: string }) => ({
+          ...safeHistory.map((item: { role: string; text: string }) => ({
             role: item.role === "assistant" ? "assistant" : "user",
-            content: item.text,
+            content: item.text.substring(0, 4000),
           })),
           { role: "user", content: message },
         ];
 
         const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (customApiKey) {
-          headers["Authorization"] = `Bearer ${customApiKey}`;
+        if (customApiKey && typeof customApiKey === 'string') {
+          headers["Authorization"] = `Bearer ${customApiKey.trim()}`;
         }
 
         const customRes = await fetch(targetUrl, {
           method: "POST",
           headers,
+          signal: AbortSignal.timeout(15000),
           body: JSON.stringify({
             model: customModel || "deepseek/deepseek-chat",
             messages: customMessages,
@@ -150,37 +177,50 @@ app.post("/api/ai/chat", async (req, res) => {
     }
 
     // 3. GEMINI SERVER-SIDE CLOUD TELEMETRY (Default)
-    const ai = getGenAI();
+    try {
+      const ai = getGenAI();
 
-    // Convert history into contents format
-    const contents = [
-      ...conversationHistory.map((item: { role: string; text: string }) => ({
-        role: item.role === "assistant" ? "model" : "user",
-        parts: [{ text: item.text }],
-      })),
-      {
-        role: "user",
-        parts: [{ text: message }],
-      },
-    ];
+      // Convert history into contents format
+      const contents = [
+        ...safeHistory.map((item: { role: string; text: string }) => ({
+          role: item.role === "assistant" ? "model" : "user",
+          parts: [{ text: item.text.substring(0, 4000) }],
+        })),
+        {
+          role: "user",
+          parts: [{ text: message }],
+        },
+      ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents,
-      config: {
-        systemInstruction: MOTORSPORTS_SYSTEM_INSTRUCTION,
-        temperature: 0.4, // lower temperature for high factual accuracy
-      },
-    });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents,
+        config: {
+          systemInstruction: MOTORSPORTS_SYSTEM_INSTRUCTION,
+          temperature: 0.4, // lower temperature for high factual accuracy
+        },
+      });
 
-    const replyText = response.text || "No response generated.";
-    return res.json({ reply: replyText, provider: "gemini", model: "gemini-2.5-flash" });
+      const replyText = response.text || "No response generated.";
+      return res.json({ reply: replyText, provider: "gemini", model: "gemini-2.5-flash" });
+    } catch (geminiError: any) {
+      console.warn("Gemini API call encountered quota or network exception:", geminiError?.message);
+      // Return 200 with fallback indicator so client handles gracefully without throwing raw 500
+      return res.json({
+        reply: null,
+        fallbackRequested: true,
+        error: geminiError?.message || "Gemini service temporarily unavailable",
+        provider: "offline_fallback"
+      });
+    }
   } catch (error: any) {
     console.error("AI API Error:", error);
     const errorMessage = error?.message || "Failed to generate AI response";
-    return res.status(500).json({
+    return res.status(200).json({
+      reply: null,
+      fallbackRequested: true,
       error: errorMessage,
-      fallbackText: "I could not contact the telemetry uplink at this moment. You can switch to Ollama / Local LLM mode in settings for 100% unlimited offline intelligence.",
+      provider: "offline_fallback"
     });
   }
 });
@@ -199,7 +239,7 @@ app.get("/api/gemini/daily-fact", async (req, res) => {
       model: "gemini-2.5-flash",
       contents: "Give me one fascinating, hyper-accurate, lesser-known Formula 1 technical or historical fact. Keep it within 3-4 sentences with exact numbers, year, and circuit/driver details.",
       config: {
-        systemInstruction: F1_SYSTEM_INSTRUCTION,
+        systemInstruction: MOTORSPORTS_SYSTEM_INSTRUCTION,
         temperature: 0.7,
       },
     });

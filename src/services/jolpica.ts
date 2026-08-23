@@ -1,5 +1,6 @@
 import { Driver, Constructor, DriverStanding, ConstructorStanding, Race, RaceResult, SeasonMetrics } from '../types';
 import { CONSTRUCTORS, DRIVERS, SAMPLE_2026_CONSTRUCTOR_STANDINGS, SAMPLE_2026_RACES, SAMPLE_2026_STANDINGS, SAMPLE_RACE_RESULTS } from '../data/fallbackF1Data';
+import { F1_STANDINGS } from '../data/categories/f1Standings';
 
 const BASE_URL = 'https://api.jolpi.ca/ergast/f1';
 const CACHE = new Map<string, { timestamp: number; data: any }>();
@@ -41,7 +42,10 @@ export const JolpicaService = {
   },
 
   async getRacesForSeason(year: number): Promise<Race[]> {
-    if (year >= 2025) {
+    if (F1_STANDINGS[year]?.races) {
+      return F1_STANDINGS[year].races;
+    }
+    if (year >= 2026) {
       return SAMPLE_2026_RACES;
     }
 
@@ -74,7 +78,10 @@ export const JolpicaService = {
   },
 
   async getDriverStandings(year: number): Promise<DriverStanding[]> {
-    if (year >= 2025) {
+    if (F1_STANDINGS[year]?.driverStandings) {
+      return F1_STANDINGS[year].driverStandings;
+    }
+    if (year >= 2026) {
       return SAMPLE_2026_STANDINGS;
     }
 
@@ -124,7 +131,10 @@ export const JolpicaService = {
   },
 
   async getConstructorStandings(year: number): Promise<ConstructorStanding[]> {
-    if (year >= 2025) {
+    if (F1_STANDINGS[year]?.constructorStandings) {
+      return F1_STANDINGS[year].constructorStandings;
+    }
+    if (year >= 2026) {
       return SAMPLE_2026_CONSTRUCTOR_STANDINGS;
     }
 
@@ -231,6 +241,10 @@ export const JolpicaService = {
   },
 
   async getSeasonMetrics(year: number): Promise<SeasonMetrics> {
+    if (F1_STANDINGS[year]?.metrics) {
+      return F1_STANDINGS[year].metrics;
+    }
+
     const [driverStandings, constructorStandings, races] = await Promise.all([
       this.getDriverStandings(year),
       this.getConstructorStandings(year),

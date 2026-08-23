@@ -86,18 +86,16 @@ export const F1Assistant: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      text: `### 🏁 Apex Motorsports AI — Multi-Discipline Racing Intelligence
+      text: `### 🏁 Apex Motorsports AI
 
-Welcome to **Apex Motorsports AI**, your telemetry analyst and race engineer covering **all premier motorsport disciplines**:
+Ask anything across world championship motorsport disciplines:
 
-* 🏎️ **Formula 1**: 75-year Grand Prix history, ground effect aero, 1.6L turbo-hybrids, 2026 engine overhaul (350kW MGU-K).
-* ⏱️ **WEC & 24H Endurance**: Le Mans 24h, Nürburgring 24h, Hypercars (Ferrari 499P, Porsche 963, Toyota GR010), BoP curves.
-* 💨 **Formula Drift**: 1,000+ HP pro sliding, 75° extreme drift angle telemetry, Irwindale wall scraping, tandem chase rules.
-* 🌲 **WRC Rally**: Rally1 500hp hybrid boost, Finland 200 km/h gravel jumps, Monte Carlo ice transitions, pacenotes.
-* 🏍️ **MotoGP & WorldSBK**: 1000cc prototypes, 366 km/h top speeds, 65° lean angles, ride-height holeshot devices.
-* 🏆 **DTM, IndyCar & Supercars**: GT3 sprint warfare, Indy 500 230+ mph oval draft, Bathurst 1000 Mount Panorama.
-
-**Zero Limit Multi-Engine**: Connect local **Ollama (unlimited messages)**, Gemini Cloud, Custom OpenRouter/DeepSeek, or the autonomous offline engine in settings below.`,
+* 🏎️ **Formula 1**: Aerodynamics, power units, 2026 regulations, race strategies, tire wear.
+* ⏱️ **WEC & 24H Endurance**: Le Mans Hypercars (Ferrari 499P, Porsche 963, Toyota GR010), BoP curves.
+* 💨 **Formula Drift**: Initiation physics, 75° angle telemetry, clipping zones, chase criteria.
+* 🌲 **WRC Rally**: Rally1 hybrid boost, high-speed gravel dynamics, stage pacenotes.
+* 🏍️ **MotoGP & WorldSBK**: 1000cc prototypes, 65° lean angles, holeshot devices, braking dynamics.
+* 🏆 **DTM, IndyCar & Supercars**: GT3 sprint setups, Indy 500 oval drafts, Bathurst Mount Panorama.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       provider: 'offline_engine',
       modelName: 'Apex Engine',
@@ -172,7 +170,7 @@ Welcome to **Apex Motorsports AI**, your telemetry analyst and race engineer cov
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: `⚠️ **Paddock Uplink Notice**: ${err.message || 'Could not establish connection.'}\n\n*Tip: Open AI Settings below to switch to **Ollama / Local LLM (unlimited messages)** or the built-in Autonomous Engine.*`,
+        text: `⚠️ **Paddock Uplink Notice**: ${err.message || 'Could not establish connection.'}\n\n*Tip: Open Engine Settings to switch to **Ollama / Local LLM** or the built-in Autonomous Engine.*`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         provider: 'offline_engine',
         modelName: 'Error Handling',
@@ -211,46 +209,21 @@ Welcome to **Apex Motorsports AI**, your telemetry analyst and race engineer cov
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px] glass-panel-elevated rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative">
-      {/* Top Header with Multi-Provider Status and Controls */}
-      <div className="p-4 sm:p-5 border-b border-white/10 bg-gradient-to-r from-[#0d0d1f] via-[#121228] to-[#0d0d1f] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+      {/* Top Header with Controls */}
+      <div className="p-4 sm:p-5 border-b border-white/10 bg-[#121215] flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <ApexMotorsportsLogo size="sm" />
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-white uppercase tracking-wider font-mono">
-                Apex Motorsports AI
-              </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#ff1744]/20 text-[#ff4d6d] border border-[#ff1744]/30">
-                ALL MOTORSPORTS
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 font-mono">
-              Zero-Limit Race Engineering & Telemetry Intelligence
-            </p>
-          </div>
+          <h2 className="text-lg font-black text-white uppercase tracking-wider font-mono">
+            Apex AI Intelligence
+          </h2>
         </div>
 
-        {/* Engine Badge & Configuration Action */}
+        {/* Engine Settings Action Only */}
         <div className="flex items-center gap-2">
-          {/* Active Engine Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card border border-white/10 text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-slate-400">Engine:</span>
-            <span className="text-white font-bold uppercase">
-              {aiSettings.provider === 'ollama'
-                ? `Ollama (${aiSettings.ollamaModel})`
-                : aiSettings.provider === 'custom'
-                ? 'Custom / OpenRouter'
-                : aiSettings.provider === 'offline_engine'
-                ? 'Offline Engine'
-                : 'Gemini Cloud'}
-            </span>
-          </div>
-
           {/* Settings Trigger */}
           <button
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold ${
+            className={`px-3 py-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold ${
               isSettingsOpen
                 ? 'bg-[#ff1744] text-white border-white/30 shadow-lg shadow-[#ff1744]/30'
                 : 'glass-card text-slate-300 hover:text-white hover:border-white/20'
@@ -258,7 +231,7 @@ Welcome to **Apex Motorsports AI**, your telemetry analyst and race engineer cov
             title="AI Engine Configuration"
           >
             <Sliders className="w-4 h-4" />
-            <span className="hidden sm:inline">Engine Settings</span>
+            <span>Engine Settings</span>
           </button>
 
           {/* Speech Audio Toggle */}
@@ -474,14 +447,9 @@ Welcome to **Apex Motorsports AI**, your telemetry analyst and race engineer cov
         </div>
       )}
 
-      {/* Suggested Multi-Discipline Prompts Bar */}
+      {/* Suggested Prompts Bar */}
       <div className="p-3 bg-black/40 border-b border-white/5 overflow-x-auto no-scrollbar shrink-0">
         <div className="flex items-center gap-2 min-w-max">
-          <span className="text-[11px] font-mono font-bold text-[#ff4d6d] uppercase flex items-center gap-1 pl-1">
-            <Compass className="w-3 h-3" />
-            <span>DISCIPLINES:</span>
-          </span>
-
           {SUGGESTED_PROMPTS.map((item, idx) => (
             <button
               key={idx}

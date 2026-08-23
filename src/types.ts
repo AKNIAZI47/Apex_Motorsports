@@ -156,6 +156,15 @@ export interface SeasonMetrics {
   leadingTeam?: string;
 }
 
+export interface CategorySeasonData {
+  category: MotorsportCategory;
+  year: number;
+  driverStandings: DriverStanding[];
+  constructorStandings: ConstructorStanding[];
+  races: Race[];
+  metrics: SeasonMetrics;
+}
+
 export interface TrackCoordinate {
   x: number;
   y: number;

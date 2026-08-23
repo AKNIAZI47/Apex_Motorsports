@@ -131,44 +131,32 @@ export const CircuitMapReplay: React.FC<Props> = ({
     return () => cancelAnimationFrame(animationFrameId);
   }, [isPlaying, speedMultiplier, totalLaps, selectedCategory]);
 
-  // Calculate coordinates along the SVG path for each vehicle
-  const [carPositions, setCarPositions] = useState<{
-    code: string;
-    name: string;
-    number: number | string;
-    team: string;
-    vehicle: string;
-    color: string;
-    x: number;
-    y: number;
-    speed: number;
-    gear: number;
-    throttle: number;
-    brake: number;
-    drs: boolean;
-    tire: string;
-    gap: string;
-    pos: number;
-    driftAngleDeg: number;
-    leanAngleDeg: number;
-    energyMJ: number;
-    boostKw: number;
-    jumpMeters: number;
-    pacenote: string;
-    specialtyMetric: string;
-  }[]>([]);
+  const pathTotalLength = useRef<number>(1000);
 
+  // Measure path length safely whenever circuit changes
   useEffect(() => {
-    if (!pathRef.current) return;
-    const path = pathRef.current;
-    const totalLength = path.getTotalLength();
+    if (pathRef.current) {
+      pathTotalLength.current = pathRef.current.getTotalLength() || 1000;
+    }
+  }, [circuit.id]);
 
-    const positions = disciplineConfig.drivers.map((driver, index) => {
+  // Calculate coordinates along the SVG path for each vehicle cleanly via useMemo
+  const carPositions = useMemo(() => {
+    const totalLength = pathRef.current ? pathRef.current.getTotalLength() : pathTotalLength.current;
+
+    return disciplineConfig.drivers.map((driver, index) => {
       let carProgress = (progress + driver.offset) % 1;
       if (carProgress < 0) carProgress += 1;
 
-      const distance = carProgress * totalLength;
-      const point = path.getPointAtLength(distance);
+      let point = { x: 400, y: 300 };
+      if (pathRef.current && totalLength > 0) {
+        try {
+          const pt = pathRef.current.getPointAtLength(carProgress * totalLength);
+          point = { x: pt.x, y: pt.y };
+        } catch {
+          // fallback point
+        }
+      }
 
       // Track dynamics based on vehicle progression
       const isStraight =
@@ -251,8 +239,6 @@ export const CircuitMapReplay: React.FC<Props> = ({
         specialtyMetric: driver.specialtyMetric || `${speed} km/h`,
       };
     });
-
-    setCarPositions(positions);
   }, [progress, circuit.id, disciplineConfig, selectedCategory]);
 
   const activeDriversList = disciplineConfig.drivers;
@@ -263,19 +249,8 @@ export const CircuitMapReplay: React.FC<Props> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* 9 Category Dedicated Quick-Switcher Bar */}
-      <div className="p-4 glass-panel-elevated rounded-2xl border border-white/10 shadow-xl flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#ff1744] uppercase tracking-wider">
-            <Layers className="w-4 h-4" />
-            <span>Select Racing Series (Loads Category Telemetry & Competitors)</span>
-          </div>
-          <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
-            <Radio className="w-3.5 h-3.5 animate-pulse" />
-            <span>Live Category Data Synchronized</span>
-          </span>
-        </div>
-
+      {/* 9 Category Quick-Switcher Bar */}
+      <div className="p-3 glass-panel-elevated rounded-2xl border border-white/10 shadow-xl flex flex-col gap-2">
         {/* 9 Distinct Category Buttons */}
         <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1.5">
           {(Object.keys(DISCIPLINE_TELEMETRY) as MotorsportCategory[]).map((catKey) => {
@@ -323,11 +298,11 @@ export const CircuitMapReplay: React.FC<Props> = ({
           </p>
         </div>
 
-        {/* Category-Specific Circuit Select & Live Status */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Category-Specific Circuit Select */}
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-[#090a14] border border-white/15 rounded-xl px-3.5 py-2 shadow-inner">
             <span className="text-xs font-bold text-slate-400 uppercase font-mono">
-              {disciplineConfig.shortCode} Circuit:
+              Circuit:
             </span>
             <select
               value={circuit.id}
@@ -340,11 +315,6 @@ export const CircuitMapReplay: React.FC<Props> = ({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-bold font-mono shadow-lg shadow-emerald-500/10">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>LIVE SESSION</span>
           </div>
         </div>
       </div>
@@ -488,8 +458,8 @@ export const CircuitMapReplay: React.FC<Props> = ({
               )}
 
               {/* Rally Splits Checkpoint Indicators */}
-              {circuit.splits?.map((split) => (
-                <g key={split.id} className="opacity-90 hover:opacity-100 transition-opacity">
+              {circuit.splits?.map((split, idx) => (
+                <g key={split.name || idx} className="opacity-90 hover:opacity-100 transition-opacity">
                   <line
                     x1={split.x - 8}
                     y1={split.y - 8}

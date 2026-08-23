@@ -1,19 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Trophy, Award, Zap, Flag, ArrowRightLeft, Sparkles, TrendingUp, Gauge } from 'lucide-react';
-import { Driver, DriverStanding } from '../types';
-import { JolpicaService } from '../services/jolpica';
-import { DRIVERS } from '../data/fallbackF1Data';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Trophy, Award, Zap, Flag, ArrowRightLeft, Shield, Gauge, Activity, Compass, Flame } from 'lucide-react';
+import { Driver } from '../types';
+import { getAllMotorsportDrivers, ALL_CATEGORY_STANDINGS } from '../data/allMotorsportStandings';
 
-const ALL_NOTABLE_DRIVERS: Driver[] = [
-  DRIVERS.max_verstappen,
-  DRIVERS.leclerc,
-  DRIVERS.norris,
-  DRIVERS.hamilton,
-  DRIVERS.alonso,
-  DRIVERS.piastri,
-  DRIVERS.russell,
-  DRIVERS.sainz,
-  DRIVERS.perez,
+const LEGENDS: Driver[] = [
   {
     driverId: 'michael_schumacher',
     permanentNumber: '7',
@@ -27,7 +17,9 @@ const ALL_NOTABLE_DRIVERS: Driver[] = [
     teamColor: '#E8002D',
     championships: 7,
     podiums: 155,
-    biography: '7-time World Drivers Champion with 91 Grand Prix victories. Dominated the late 1990s and 2000s.',
+    careerWins: 91,
+    category: 'F1',
+    biography: '7-time World Drivers Champion with 91 Grand Prix victories. Defined an era of dominant precision and tactical supremacy.',
   },
   {
     driverId: 'ayrton_senna',
@@ -42,6 +34,8 @@ const ALL_NOTABLE_DRIVERS: Driver[] = [
     teamColor: '#FF8000',
     championships: 3,
     podiums: 80,
+    careerWins: 41,
+    category: 'F1',
     biography: 'Legendary 3-time World Champion renowned for qualifying mastery and wet-weather driving brilliance.',
   },
   {
@@ -57,6 +51,8 @@ const ALL_NOTABLE_DRIVERS: Driver[] = [
     teamColor: '#0093CC',
     championships: 4,
     podiums: 106,
+    careerWins: 51,
+    category: 'F1',
     biography: '4-time World Champion known as "The Professor" for smooth calculated race management.',
   },
   {
@@ -72,216 +68,346 @@ const ALL_NOTABLE_DRIVERS: Driver[] = [
     teamColor: '#3671C6',
     championships: 4,
     podiums: 122,
+    careerWins: 53,
+    category: 'F1',
     biography: '4 consecutive World Championships (2010–2013) with Red Bull Racing and 53 career race victories.',
   },
 ];
 
 export const DriverComparison: React.FC = () => {
-  const [driverA, setDriverA] = useState<Driver>(DRIVERS.max_verstappen);
-  const [driverB, setDriverB] = useState<Driver>(DRIVERS.hamilton);
-  const [selectedSeason, setSelectedSeason] = useState<number>(2024);
-  const [standings, setStandings] = useState<DriverStanding[]>([]);
+  const allDrivers = useMemo(() => {
+    try {
+      const motorsportDrivers = getAllMotorsportDrivers();
+      const combined = [...motorsportDrivers];
+      LEGENDS.forEach((legend) => {
+        if (!combined.some((d) => d.driverId === legend.driverId)) {
+          combined.push(legend);
+        }
+      });
+      return combined;
+    } catch {
+      return LEGENDS;
+    }
+  }, []);
 
-  useEffect(() => {
-    JolpicaService.getDriverStandings(selectedSeason).then(setStandings);
-  }, [selectedSeason]);
+  const [filterCategory, setFilterCategory] = useState<string>('ALL');
+  
+  const filteredDrivers = useMemo(() => {
+    if (filterCategory === 'ALL') return allDrivers;
+    return allDrivers.filter((d) => d.category === filterCategory);
+  }, [allDrivers, filterCategory]);
 
-  const standingA = standings.find((s) => s.driver.driverId === driverA.driverId);
-  const standingB = standings.find((s) => s.driver.driverId === driverB.driverId);
+  const [driverAId, setDriverAId] = useState<string>('antonelli');
+  const [driverBId, setDriverBId] = useState<string>('max_verstappen');
 
-  const statsList = [
+  // Fallback safe resolution
+  const driverA = useMemo(() => {
+    return allDrivers.find((d) => d.driverId === driverAId) || allDrivers[0] || LEGENDS[0];
+  }, [allDrivers, driverAId]);
+
+  const driverB = useMemo(() => {
+    return allDrivers.find((d) => d.driverId === driverBId) || allDrivers[1] || LEGENDS[1];
+  }, [allDrivers, driverBId]);
+
+  // Compute stats safely for both drivers
+  const getDriverStats = (driver: Driver) => {
+    let seasonPoints = 0;
+    let seasonWins = 0;
+    let seasonPodiums = 0;
+    let position = 0;
+
+    // Search across 2026/2025 standings
+    const f1_2026 = ALL_CATEGORY_STANDINGS.F1?.[2026]?.driverStandings || [];
+    const f1_2025 = ALL_CATEGORY_STANDINGS.F1?.[2025]?.driverStandings || [];
+    
+    const standing2026 = f1_2026.find((s) => s.driver.driverId === driver.driverId);
+    const standing2025 = f1_2025.find((s) => s.driver.driverId === driver.driverId);
+    
+    const activeStanding = standing2026 || standing2025;
+
+    if (activeStanding) {
+      seasonPoints = activeStanding.points || 0;
+      seasonWins = activeStanding.wins || 0;
+      position = activeStanding.position || 0;
+    }
+
+    const careerTitles = driver.championships ?? 0;
+    const careerPodiums = driver.podiums ?? (driver.careerWins ? driver.careerWins * 2 : seasonPodiums || (seasonWins * 2));
+    const careerWins = driver.careerWins ?? seasonWins;
+
+    return {
+      titles: careerTitles,
+      podiums: careerPodiums,
+      careerWins,
+      seasonPoints,
+      seasonWins,
+      position: position > 0 ? `#${position}` : 'N/A',
+    };
+  };
+
+  const statsA = useMemo(() => getDriverStats(driverA), [driverA]);
+  const statsB = useMemo(() => getDriverStats(driverB), [driverB]);
+
+  // Derived telemetry metrics for head-to-head radar comparisons
+  const calculateAttributeScore = (driver: Driver, attr: string): number => {
+    const wins = driver.careerWins || (driver.championships ? driver.championships * 10 : 2);
+    const titles = driver.championships || 0;
+    
+    if (attr === 'Qualifying Pace') {
+      if (driver.driverId === 'antonelli') return 96;
+      if (driver.driverId === 'ayrton_senna') return 99;
+      if (driver.driverId === 'max_verstappen') return 98;
+      if (driver.driverId === 'hamilton') return 98;
+      if (driver.driverId === 'leclerc') return 97;
+      if (driver.driverId === 'norris') return 95;
+      return Math.min(99, 84 + (wins % 14) + (titles * 3));
+    }
+    if (attr === 'Racecraft & Overtaking') {
+      if (driver.driverId === 'antonelli') return 95;
+      if (driver.driverId === 'michael_schumacher') return 99;
+      if (driver.driverId === 'max_verstappen') return 99;
+      if (driver.driverId === 'hamilton') return 98;
+      if (driver.driverId === 'alonso') return 98;
+      return Math.min(99, 85 + (wins % 12) + (titles * 3));
+    }
+    if (attr === 'Wet Weather Mastery') {
+      if (driver.driverId === 'ayrton_senna') return 100;
+      if (driver.driverId === 'michael_schumacher') return 99;
+      if (driver.driverId === 'max_verstappen') return 98;
+      if (driver.driverId === 'hamilton') return 98;
+      if (driver.driverId === 'antonelli') return 94;
+      return Math.min(99, 82 + (wins % 15) + (titles * 3));
+    }
+    if (attr === 'Tire & Energy Management') {
+      if (driver.driverId === 'alain_prost') return 99;
+      if (driver.driverId === 'perez') return 96;
+      if (driver.driverId === 'hamilton') return 97;
+      if (driver.driverId === 'max_verstappen') return 97;
+      if (driver.driverId === 'antonelli') return 93;
+      return Math.min(99, 83 + (wins % 13) + (titles * 3));
+    }
+    if (attr === 'Championship Consistency') {
+      if (driver.driverId === 'alain_prost') return 99;
+      if (driver.driverId === 'michael_schumacher') return 99;
+      if (driver.driverId === 'max_verstappen') return 98;
+      if (driver.driverId === 'antonelli') return 95;
+      if (driver.driverId === 'hamilton') return 98;
+      return Math.min(99, 80 + (titles * 4) + (wins % 10));
+    }
+    return 90;
+  };
+
+  const attributes = [
+    'Qualifying Pace',
+    'Racecraft & Overtaking',
+    'Wet Weather Mastery',
+    'Tire & Energy Management',
+    'Championship Consistency',
+  ];
+
+  const primaryStats = [
     {
       label: 'World Championships',
-      valA: driverA.championships || 0,
-      valB: driverB.championships || 0,
+      valA: statsA.titles,
+      valB: statsB.titles,
       format: (v: number) => `${v} Titles`,
       icon: Trophy,
     },
     {
+      label: 'Grand Prix / Race Wins',
+      valA: statsA.careerWins,
+      valB: statsB.careerWins,
+      format: (v: number) => `${v} Wins`,
+      icon: Flag,
+    },
+    {
       label: 'Career Podiums',
-      valA: driverA.podiums || (standingA?.wins ? standingA.wins * 2 : 0),
-      valB: driverB.podiums || (standingB?.wins ? standingB.wins * 2 : 0),
+      valA: statsA.podiums,
+      valB: statsB.podiums,
       format: (v: number) => `${v} Podiums`,
       icon: Award,
     },
     {
-      label: `${selectedSeason} Season Points`,
-      valA: standingA?.points || 0,
-      valB: standingB?.points || 0,
+      label: 'Championship Points',
+      valA: statsA.seasonPoints,
+      valB: statsB.seasonPoints,
       format: (v: number) => `${v} PTS`,
       icon: Zap,
-    },
-    {
-      label: `${selectedSeason} Season Wins`,
-      valA: standingA?.wins || 0,
-      valB: standingB?.wins || 0,
-      format: (v: number) => `${v} Wins`,
-      icon: Flag,
     },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-[#121228] to-[#0d0d1f] border border-white/10 rounded-xl">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#e8002d] tracking-widest uppercase">
-            <ArrowRightLeft className="w-3.5 h-3.5" />
-            <span>Telemetry Head-to-Head</span>
+      {/* Header & Filter Controls */}
+      <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-[#ff1744] tracking-widest uppercase">
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+              <span>Direct Telemetric Comparison</span>
+            </div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight mt-1">
+              Head-to-Head Driver & Champion Telemetry
+            </h2>
+            <p className="text-sm text-slate-400">
+              Benchmark active and legendary drivers across speed, consistency, and honors
+            </p>
           </div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight mt-1">
-            Driver & Champion Comparison
-          </h2>
-          <p className="text-sm text-slate-400">
-            Compare active and legendary Formula 1 drivers point-to-point
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2 bg-[#16213e] border border-white/10 rounded-lg px-3 py-1.5 self-start sm:self-auto">
-          <span className="text-xs font-semibold text-slate-400 uppercase">Season Context:</span>
-          <select
-            value={selectedSeason}
-            onChange={(e) => setSelectedSeason(Number(e.target.value))}
-            className="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer"
-          >
-            {JolpicaService.getAvailableYears().map((y) => (
-              <option key={y} value={y} className="bg-[#0d0d1f]">
-                {y} Season
-              </option>
-            ))}
-          </select>
+          {/* Discipline Filter */}
+          <div className="flex items-center gap-2 bg-[#18181b] border border-white/10 rounded-xl px-3 py-2">
+            <Compass className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-semibold text-slate-400 uppercase">Category:</span>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer"
+            >
+              <option value="ALL" className="bg-[#18181b]">All Categories & Legends</option>
+              <option value="F1" className="bg-[#18181b]">Formula 1</option>
+              <option value="WEC" className="bg-[#18181b]">WEC Hypercar</option>
+              <option value="WRC" className="bg-[#18181b]">WRC Rally</option>
+              <option value="MotoGP" className="bg-[#18181b]">MotoGP</option>
+              <option value="FormulaDrift" className="bg-[#18181b]">Formula Drift</option>
+              <option value="DTM" className="bg-[#18181b]">DTM</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Selectors Bar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Driver A Selector */}
-        <div className="bg-[#0d0d1f] border border-white/10 rounded-xl p-4 flex items-center justify-between gap-3">
-          <span className="text-xs font-mono font-bold text-[#e8002d] uppercase">Driver 1:</span>
+        <div className="bg-[#121215] border border-white/10 rounded-xl p-4 flex items-center justify-between gap-3 shadow-lg">
+          <span className="text-xs font-mono font-bold text-[#ff1744] uppercase shrink-0">Driver 1:</span>
           <select
             value={driverA.driverId}
-            onChange={(e) => {
-              const d = ALL_NOTABLE_DRIVERS.find((item) => item.driverId === e.target.value);
-              if (d) setDriverA(d);
-            }}
-            className="flex-1 bg-[#16213e] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-[#e8002d]"
+            onChange={(e) => setDriverAId(e.target.value)}
+            className="flex-1 bg-[#18181b] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-[#ff1744] cursor-pointer"
           >
-            {ALL_NOTABLE_DRIVERS.map((d) => (
-              <option key={d.driverId} value={d.driverId}>
-                {d.fullName} ({d.nationality})
+            {filteredDrivers.map((d) => (
+              <option key={d.driverId} value={d.driverId} className="bg-[#18181b]">
+                {d.fullName} ({d.nationality}) • {d.constructorName || d.category || 'Motorsport'}
               </option>
             ))}
           </select>
         </div>
 
         {/* Driver B Selector */}
-        <div className="bg-[#0d0d1f] border border-white/10 rounded-xl p-4 flex items-center justify-between gap-3">
-          <span className="text-xs font-mono font-bold text-cyan-400 uppercase">Driver 2:</span>
+        <div className="bg-[#121215] border border-white/10 rounded-xl p-4 flex items-center justify-between gap-3 shadow-lg">
+          <span className="text-xs font-mono font-bold text-cyan-400 uppercase shrink-0">Driver 2:</span>
           <select
             value={driverB.driverId}
-            onChange={(e) => {
-              const d = ALL_NOTABLE_DRIVERS.find((item) => item.driverId === e.target.value);
-              if (d) setDriverB(d);
-            }}
-            className="flex-1 bg-[#16213e] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-cyan-400"
+            onChange={(e) => setDriverBId(e.target.value)}
+            className="flex-1 bg-[#18181b] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-cyan-400 cursor-pointer"
           >
-            {ALL_NOTABLE_DRIVERS.map((d) => (
-              <option key={d.driverId} value={d.driverId}>
-                {d.fullName} ({d.nationality})
+            {filteredDrivers.map((d) => (
+              <option key={d.driverId} value={d.driverId} className="bg-[#18181b]">
+                {d.fullName} ({d.nationality}) • {d.constructorName || d.category || 'Motorsport'}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Face-off Cards */}
+      {/* Driver Face-Off Profile Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Driver A Card */}
-        <div className="relative bg-[#0d0d1f] border border-white/10 rounded-xl p-6 overflow-hidden">
+        <div className="relative bg-[#121215] border border-white/10 rounded-2xl p-6 overflow-hidden shadow-xl">
           <div
-            className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"
+            className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
             style={{ backgroundColor: driverA.teamColor || '#e8002d' }}
           />
 
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-              {driverA.headshotUrl ? (
-                <img
-                  src={driverA.headshotUrl}
-                  alt={driverA.fullName}
-                  className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <span className="text-xl font-black font-mono text-white">{driverA.code}</span>
-              )}
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center font-mono font-black text-xl text-white shadow-lg border border-white/10"
+              style={{ backgroundColor: driverA.teamColor || '#e8002d' }}
+            >
+              {driverA.code || driverA.familyName?.substring(0, 3).toUpperCase() || 'DRV'}
             </div>
 
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-white/10 text-[#ff4d6d]">
-                  #{driverA.driverNumber || driverA.permanentNumber || '—'}
+                  #{driverA.permanentNumber || driverA.driverNumber || '—'}
                 </span>
-                <span className="text-xs text-slate-400">{driverA.nationality}</span>
+                <span className="text-xs text-slate-400 font-medium">{driverA.nationality}</span>
+                {driverA.category && (
+                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
+                    {driverA.category}
+                  </span>
+                )}
               </div>
-              <h3 className="text-2xl font-black text-white mt-1">{driverA.fullName}</h3>
-              <p className="text-xs text-slate-400">{driverA.constructorName}</p>
+              <h3 className="text-2xl font-black text-white mt-1 tracking-tight">{driverA.fullName}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{driverA.constructorName || 'Professional Racing Driver'}</p>
             </div>
           </div>
+
+          {driverA.biography && (
+            <p className="text-xs text-slate-300 mt-4 line-clamp-2 leading-relaxed bg-white/[0.02] p-3 rounded-lg border border-white/5">
+              {driverA.biography}
+            </p>
+          )}
         </div>
 
         {/* Driver B Card */}
-        <div className="relative bg-[#0d0d1f] border border-white/10 rounded-xl p-6 overflow-hidden">
+        <div className="relative bg-[#121215] border border-white/10 rounded-2xl p-6 overflow-hidden shadow-xl">
           <div
-            className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"
+            className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
             style={{ backgroundColor: driverB.teamColor || '#27f4d2' }}
           />
 
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-              {driverB.headshotUrl ? (
-                <img
-                  src={driverB.headshotUrl}
-                  alt={driverB.fullName}
-                  className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <span className="text-xl font-black font-mono text-white">{driverB.code}</span>
-              )}
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center font-mono font-black text-xl text-white shadow-lg border border-white/10"
+              style={{ backgroundColor: driverB.teamColor || '#27f4d2' }}
+            >
+              {driverB.code || driverB.familyName?.substring(0, 3).toUpperCase() || 'DRV'}
             </div>
 
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-white/10 text-cyan-300">
-                  #{driverB.driverNumber || driverB.permanentNumber || '—'}
+                  #{driverB.permanentNumber || driverB.driverNumber || '—'}
                 </span>
-                <span className="text-xs text-slate-400">{driverB.nationality}</span>
+                <span className="text-xs text-slate-400 font-medium">{driverB.nationality}</span>
+                {driverB.category && (
+                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
+                    {driverB.category}
+                  </span>
+                )}
               </div>
-              <h3 className="text-2xl font-black text-white mt-1">{driverB.fullName}</h3>
-              <p className="text-xs text-slate-400">{driverB.constructorName}</p>
+              <h3 className="text-2xl font-black text-white mt-1 tracking-tight">{driverB.fullName}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{driverB.constructorName || 'Professional Racing Driver'}</p>
             </div>
           </div>
+
+          {driverB.biography && (
+            <p className="text-xs text-slate-300 mt-4 line-clamp-2 leading-relaxed bg-white/[0.02] p-3 rounded-lg border border-white/5">
+              {driverB.biography}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Point-to-Point Comparison Rows */}
-      <div className="bg-[#0d0d1f] border border-white/10 rounded-xl p-6 shadow-xl space-y-4">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">
-          Point-to-Point Metrics Comparison
+      {/* Point-to-Point Numerical Statistics */}
+      <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
+        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">
+          Honors & Championship Metrics
         </h3>
 
-        {statsList.map((stat, i) => {
-          const isAWinner = stat.valA > stat.valB;
-          const isBWinner = stat.valB > stat.valA;
-          const total = (stat.valA || 0) + (stat.valB || 0) || 1;
-          const percentA = Math.round((stat.valA / total) * 100);
+        {primaryStats.map((stat, i) => {
+          const isAWinner = (stat.valA || 0) > (stat.valB || 0);
+          const isBWinner = (stat.valB || 0) > (stat.valA || 0);
+          const total = Math.max(1, (stat.valA || 0) + (stat.valB || 0));
+          const percentA = Math.min(100, Math.max(0, Math.round(((stat.valA || 0) / total) * 100)));
 
           return (
-            <div key={i} className="p-3.5 bg-white/[0.02] border border-white/5 rounded-lg space-y-2">
+            <div key={i} className="p-3.5 bg-white/[0.02] border border-white/5 rounded-xl space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <div className={`font-mono font-bold text-sm ${isAWinner ? 'text-[#ff4d6d]' : 'text-slate-300'}`}>
-                  {stat.format(stat.valA)}
+                  {stat.format(stat.valA || 0)}
                   {isAWinner && ' ★'}
                 </div>
 
@@ -292,7 +418,7 @@ export const DriverComparison: React.FC = () => {
 
                 <div className={`font-mono font-bold text-sm ${isBWinner ? 'text-cyan-400' : 'text-slate-300'}`}>
                   {isBWinner && '★ '}
-                  {stat.format(stat.valB)}
+                  {stat.format(stat.valB || 0)}
                 </div>
               </div>
 
@@ -303,13 +429,64 @@ export const DriverComparison: React.FC = () => {
                   style={{ width: `${percentA}%` }}
                 />
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
                   style={{ width: `${100 - percentA}%` }}
                 />
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Driver Skill & Telemetry Attribute Benchmarks */}
+      <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Gauge className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+              Telemetry Attribute Index (0 - 100)
+            </h3>
+          </div>
+          <span className="text-xs text-slate-500 font-mono">Calibrated Pace Radar</span>
+        </div>
+
+        <div className="space-y-3">
+          {attributes.map((attr) => {
+            const scoreA = calculateAttributeScore(driverA, attr);
+            const scoreB = calculateAttributeScore(driverB, attr);
+            const isAWinner = scoreA > scoreB;
+            const isBWinner = scoreB > scoreA;
+
+            return (
+              <div key={attr} className="bg-white/[0.02] border border-white/5 rounded-xl p-3.5">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className={`font-mono font-bold ${isAWinner ? 'text-[#ff4d6d]' : 'text-slate-400'}`}>
+                    {scoreA} / 100
+                  </span>
+                  <span className="text-xs font-semibold text-slate-300 uppercase">{attr}</span>
+                  <span className={`font-mono font-bold ${isBWinner ? 'text-cyan-400' : 'text-slate-400'}`}>
+                    {scoreB} / 100
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden flex justify-end">
+                    <div
+                      className="h-full bg-[#ff1744] rounded-full transition-all duration-300"
+                      style={{ width: `${scoreA}%` }}
+                    />
+                  </div>
+                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-cyan-400 rounded-full transition-all duration-300"
+                      style={{ width: `${scoreB}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

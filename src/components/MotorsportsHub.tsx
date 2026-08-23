@@ -147,7 +147,7 @@ export const MotorsportsHub: React.FC<Props> = ({ onLaunchTelemetry, onViewF1Das
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#e8002d] to-[#ff1744] text-white font-mono font-bold text-xs shadow-xl shadow-[#ff1744]/30 hover:scale-105 transition-all cursor-pointer"
                   >
                     <Play className="w-4 h-4 fill-current" />
-                    <span>Launch {selectedInfo.shortCode} Live Telemetry Replay</span>
+                    <span>Launch {selectedInfo.shortCode} Telemetry</span>
                   </button>
 
                   {activeCategory === 'F1' && onViewF1Dashboard && (
