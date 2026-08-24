@@ -10,7 +10,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
       completedRaces: 16,
       championDriver: 'Will Brown (Red Bull Ampol Racing #87)',
       championConstructor: 'Triple Eight Race Engineering (Chevrolet Camaro Gen3)',
-      mostWinsDriver: { name: 'Will Brown', count: 5 },
+      mostWinsDriver: { name: 'Chaz Mostert', count: 4 },
       mostPolesDriver: { name: 'Broc Feeney', count: 6 },
       leadingTeam: 'Red Bull Ampol Racing',
     },
@@ -19,7 +19,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         position: 1,
         positionText: '1',
         points: 2240,
-        wins: 5,
+        wins: 3,
         driver: {
           driverId: 'brown',
           code: 'WB87',
@@ -52,7 +52,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         position: 2,
         positionText: '2',
         points: 2150,
-        wins: 5,
+        wins: 4,
         driver: {
           driverId: 'feeney',
           code: 'BF88',
@@ -85,7 +85,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         position: 3,
         positionText: '3',
         points: 2085,
-        wins: 3,
+        wins: 4,
         driver: {
           driverId: 'mostert',
           code: 'CM25',
@@ -382,7 +382,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         position: 12,
         positionText: '12',
         points: 1180,
-        wins: 1,
+        wins: 0,
         driver: {
           driverId: 'kostecki',
           code: 'BK99',
@@ -813,7 +813,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         position: 1,
         positionText: '1',
         points: 4390,
-        wins: 10,
+        wins: 7,
         constructor: {
           constructorId: 'triple_eight',
           name: 'Red Bull Ampol Racing (Triple Eight)',
@@ -847,7 +847,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         position: 3,
         positionText: '3',
         points: 3185,
-        wins: 3,
+        wins: 4,
         constructor: {
           constructorId: 'wau_mustang',
           name: 'Walkinshaw Andretti United (Mobil 1)',
@@ -898,7 +898,7 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         position: 6,
         positionText: '6',
         points: 2430,
-        wins: 1,
+        wins: 0,
         constructor: {
           constructorId: 'djr_mustang',
           name: 'Shell V-Power Racing Team (DJR)',

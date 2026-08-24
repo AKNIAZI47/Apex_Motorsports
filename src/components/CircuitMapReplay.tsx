@@ -140,9 +140,21 @@ export const CircuitMapReplay: React.FC<Props> = ({
     }
   }, [circuit.id]);
 
+  // Trigger a re-render after 50ms on mount once pathRef is attached to the DOM
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProgress((p) => p);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [circuit.id]);
+
   // Calculate coordinates along the SVG path for each vehicle cleanly via useMemo
   const carPositions = useMemo(() => {
-    const totalLength = pathRef.current ? pathRef.current.getTotalLength() : pathTotalLength.current;
+    if (!pathRef.current) {
+      return [];
+    }
+
+    const totalLength = pathRef.current?.getTotalLength() ?? 800;
 
     return disciplineConfig.drivers.map((driver, index) => {
       let carProgress = (progress + driver.offset) % 1;
@@ -151,8 +163,13 @@ export const CircuitMapReplay: React.FC<Props> = ({
       let point = { x: 400, y: 300 };
       if (pathRef.current && totalLength > 0) {
         try {
-          const pt = pathRef.current.getPointAtLength(carProgress * totalLength);
+          const safeDist = Math.min(Math.max(carProgress * totalLength, 0), totalLength * 0.9999);
+          const pt = pathRef.current.getPointAtLength(safeDist);
           point = { x: pt.x, y: pt.y };
+          if (point.x < 5 || point.x > 845 || point.y < 5 || point.y > 515) {
+            const midPt = pathRef.current.getPointAtLength(totalLength * 0.5);
+            point = { x: midPt.x, y: midPt.y };
+          }
         } catch {
           // fallback point
         }

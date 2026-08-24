@@ -99,16 +99,6 @@ export const GridView: React.FC<Props> = ({ onSelectDriver, onLaunchTelemetry })
               className="w-full bg-[#18181b] border border-white/15 rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-[#ff1744]"
             />
           </div>
-
-          {onLaunchTelemetry && (
-            <button
-              onClick={() => onLaunchTelemetry(selectedCategory)}
-              className="px-3.5 py-2 rounded-xl bg-[#ff1744]/20 border border-[#ff1744]/50 hover:bg-[#ff1744]/30 text-white font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#ff1744]/20"
-            >
-              <Zap className="w-3.5 h-3.5 text-[#ff1744]" />
-              <span>Simulate Track</span>
-            </button>
-          )}
         </div>
       </div>
 

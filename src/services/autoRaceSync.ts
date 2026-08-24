@@ -193,14 +193,28 @@ const OFFICIAL_2026_CALENDAR_FEED: Omit<CustomRaceEvent, 'id' | 'createdAt'>[] =
     round: 14,
     raceName: 'Dutch Grand Prix',
     circuitName: 'Circuit Zandvoort',
-    circuitId: 'silverstone',
+    circuitId: 'zandvoort',
     locality: 'Zandvoort',
     country: 'Netherlands',
-    date: '2026-08-30',
+    date: '2026-08-23',
     time: '13:00:00Z',
-    status: 'Scheduled',
+    status: 'Completed',
+    winner: {
+      fullName: 'Lando Norris',
+      team: 'McLaren Formula 1 Team',
+      timeOrScore: '1:30:45.519 (72 Laps)',
+    },
+    polePosition: {
+      driverName: 'Lando Norris',
+      time: '1:09.673',
+    },
+    fastestMetric: {
+      label: 'Fastest Lap',
+      value: '1:13.817',
+      driverName: 'Lando Norris (McLaren)',
+    },
     totalLaps: 72,
-    headlineNotes: 'Next on calendar: Banked corner arena duel at Circuit Zandvoort.',
+    headlineNotes: 'Commanding victory by Lando Norris and McLaren at Zandvoort with pole, fastest lap, and win.',
   },
 
   // WEC 2026

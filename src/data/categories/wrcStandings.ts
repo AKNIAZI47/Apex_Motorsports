@@ -85,7 +85,7 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
         position: 3,
         positionText: '3',
         points: 185,
-        wins: 2,
+        wins: 0,
         driver: {
           driverId: 'neuville',
           code: 'NEU',
@@ -548,8 +548,8 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
       {
         position: 1,
         positionText: '1',
-        points: 442,
-        wins: 6,
+        points: 753,
+        wins: 8,
         constructor: {
           constructorId: 'toyota_wrt',
           name: 'Toyota Gazoo Racing World Rally Team',
@@ -565,8 +565,8 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
       {
         position: 2,
         positionText: '2',
-        points: 398,
-        wins: 3,
+        points: 463,
+        wins: 1,
         constructor: {
           constructorId: 'hyundai_wrt',
           name: 'Hyundai Shell Mobis World Rally Team',
@@ -582,7 +582,7 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
       {
         position: 3,
         positionText: '3',
-        points: 218,
+        points: 254,
         wins: 0,
         constructor: {
           constructorId: 'msport_wrt',

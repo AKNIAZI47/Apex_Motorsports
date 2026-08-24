@@ -48,20 +48,20 @@ export const NewsPanel: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#ff1744] tracking-widest uppercase">
               <Newspaper className="w-4 h-4" />
-              <span>Global Motorsport Wire</span>
+              <span>Motorsport News</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mt-1">
-              Live Paddock & Technical Newsfeed
+              Latest Motorsport News
             </h2>
             <p className="text-sm text-slate-300/80 mt-1 max-w-2xl">
-              Real-time reports, technical aerodynamic analysis, 24-hour race bulletins, WRC stage split updates, and drift telemetry recaps.
+              Championship reports, team announcements, official statements, and race weekend coverage across world motorsport.
             </p>
           </div>
 
-          {/* Quick Counter */}
+          {/* Clean Counter */}
           <div className="flex items-center gap-2">
-            <span className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-[#e8002d]/20 text-[#ff4d6d] border border-[#e8002d]/30">
-              ⚡ LIVE TELEMETRY WIRE
+            <span className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-white/10 text-slate-200 border border-white/10">
+              {filtered.length} Articles
             </span>
           </div>
         </div>
@@ -113,7 +113,7 @@ export const NewsPanel: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-24 space-y-3 glass-panel rounded-2xl border border-white/5">
           <div className="w-10 h-10 border-3 border-[#e8002d] border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm font-semibold text-slate-300 font-mono">
-            Fetching Paddock Telemetry Bulletins...
+            Loading latest motorsport news...
           </p>
         </div>
       ) : (

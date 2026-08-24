@@ -7,10 +7,10 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
     metrics: {
       year: 2026,
       totalRaces: 22,
-      completedRaces: 12,
+      completedRaces: 10,
       championDriver: 'Marc Márquez (Ducati Lenovo Team)',
       championConstructor: 'Ducati Lenovo Team (Desmosedici GP26)',
-      mostWinsDriver: { name: 'Marc Márquez', count: 6 },
+      mostWinsDriver: { name: 'Marc Márquez', count: 5 },
       mostPolesDriver: { name: 'Francesco Bagnaia', count: 5 },
       leadingTeam: 'Ducati Lenovo Team',
     },
@@ -19,7 +19,7 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
         position: 1,
         positionText: '1',
         points: 298,
-        wins: 6,
+        wins: 5,
         driver: {
           driverId: 'marquez',
           code: 'MM93',
@@ -52,7 +52,7 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
         position: 2,
         positionText: '2',
         points: 274,
-        wins: 4,
+        wins: 3,
         driver: {
           driverId: 'bagnaia',
           code: 'FB63',
@@ -747,7 +747,7 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
         position: 1,
         positionText: '1',
         points: 572,
-        wins: 10,
+        wins: 8,
         constructor: {
           constructorId: 'ducati_corse',
           name: 'Ducati Lenovo Team',
@@ -814,7 +814,7 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
       {
         position: 5,
         positionText: '5',
-        points: 184,
+        points: 160,
         wins: 0,
         constructor: {
           constructorId: 'gresini_ducati',

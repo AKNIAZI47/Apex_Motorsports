@@ -52,7 +52,7 @@ export const INDYCAR_STANDINGS: Record<number, CategorySeasonData> = {
         position: 2,
         positionText: '2',
         points: 432,
-        wins: 3,
+        wins: 2,
         driver: {
           driverId: 'power',
           code: 'POW12',
@@ -118,7 +118,7 @@ export const INDYCAR_STANDINGS: Record<number, CategorySeasonData> = {
         position: 4,
         positionText: '4',
         points: 390,
-        wins: 1,
+        wins: 2,
         driver: {
           driverId: 'oward',
           code: 'OW05',
@@ -218,6 +218,23 @@ export const INDYCAR_STANDINGS: Record<number, CategorySeasonData> = {
       {
         position: 1,
         positionText: '1',
+        points: 850,
+        wins: 4,
+        constructor: {
+          constructorId: 'penske_indy',
+          name: 'Team Penske',
+          nationality: 'American',
+          color: '#D5001C',
+          powerUnit: 'Chevrolet Indy 2.2L Twin-Turbo V6 Hybrid',
+          teamPrincipal: 'Roger Penske / Tim Cindric',
+          championships: 17,
+          carModel: 'Dallara IR-18 Hybrid',
+          category: 'INDYCAR',
+        },
+      },
+      {
+        position: 2,
+        positionText: '2',
         points: 830,
         wins: 4,
         constructor: {
@@ -233,27 +250,10 @@ export const INDYCAR_STANDINGS: Record<number, CategorySeasonData> = {
         },
       },
       {
-        position: 2,
-        positionText: '2',
-        points: 850,
-        wins: 5,
-        constructor: {
-          constructorId: 'penske_indy',
-          name: 'Team Penske',
-          nationality: 'American',
-          color: '#D5001C',
-          powerUnit: 'Chevrolet Indy 2.2L Twin-Turbo V6 Hybrid',
-          teamPrincipal: 'Roger Penske / Tim Cindric',
-          championships: 17,
-          carModel: 'Dallara IR-18 Hybrid',
-          category: 'INDYCAR',
-        },
-      },
-      {
         position: 3,
         positionText: '3',
-        points: 620,
-        wins: 1,
+        points: 390,
+        wins: 2,
         constructor: {
           constructorId: 'mclaren_indy',
           name: 'Arrow McLaren',
@@ -269,7 +269,7 @@ export const INDYCAR_STANDINGS: Record<number, CategorySeasonData> = {
       {
         position: 4,
         positionText: '4',
-        points: 580,
+        points: 368,
         wins: 1,
         constructor: {
           constructorId: 'andretti_indy',

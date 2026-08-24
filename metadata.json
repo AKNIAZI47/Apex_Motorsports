@@ -1,6 +1,6 @@
 {
   "name": "Apex Motorsports",
-  "description": "Global motorsport telemetry, live intelligence, Nürburgring circuit analytics, multi-discipline news, and zero-limit AI race engineering across F1, WEC, WRC, Formula Drift, DTM, MotoGP, WSBK, and 24-hour endurance racing.",
+  "description": "Global motorsport telemetry, championship standings, circuit telemetry maps, multi-discipline news, driver and constructor profiles across F1, WEC, WRC, Formula Drift, DTM, MotoGP, WSBK, and 24-hour endurance racing.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

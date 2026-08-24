@@ -4,34 +4,81 @@ import { F1_STANDINGS } from '../data/categories/f1Standings';
 
 const BASE_URL = 'https://api.jolpi.ca/ergast/f1';
 const CACHE = new Map<string, { timestamp: number; data: any }>();
-const CACHE_TTL_MS = 1000 * 60 * 15; // 15 mins
+const CACHE_TTL_MS = 1000 * 60 * 5; // 5 mins
 
-async function fetchWithCache<T>(url: string, fallback: T): Promise<T> {
-  const cached = CACHE.get(url);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.data;
+type ApiSyncListener = (status: { isSyncing: boolean; lastSynced: Date | null; error: string | null }) => void;
+const listeners = new Set<ApiSyncListener>();
+let lastSyncedTime: Date | null = new Date();
+let isCurrentlySyncing = false;
+let lastSyncError: string | null = null;
+
+function notifySyncListeners() {
+  listeners.forEach(fn => fn({ isSyncing: isCurrentlySyncing, lastSynced: lastSyncedTime, error: lastSyncError }));
+}
+
+async function fetchFromOfficialApi<T>(endpoint: string, fallback: T, force = false): Promise<T> {
+  const url = `${BASE_URL}${endpoint}`;
+  if (!force) {
+    const cached = CACHE.get(url);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
   }
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(`HTTP error ${response.status}`);
     }
 
     const data = await response.json();
     CACHE.set(url, { timestamp: Date.now(), data });
+    lastSyncedTime = new Date();
+    lastSyncError = null;
     return data;
-  } catch (error) {
-    console.warn(`[JolpicaClient] Network fetch fallback for ${url}:`, error);
+  } catch (error: any) {
+    console.warn(`[Jolpica/Ergast API] Fallback used for ${url}:`, error?.message || error);
+    lastSyncError = error?.message || 'API connection fallback active';
     return fallback;
   }
 }
 
 export const JolpicaService = {
+  subscribeSyncStatus(listener: ApiSyncListener) {
+    listeners.add(listener);
+    listener({ isSyncing: isCurrentlySyncing, lastSynced: lastSyncedTime, error: lastSyncError });
+    return () => {
+      listeners.delete(listener);
+    };
+  },
+
+  async forceSyncOfficialApi(year = 2026): Promise<{ success: boolean; error?: string }> {
+    isCurrentlySyncing = true;
+    notifySyncListeners();
+    try {
+      CACHE.clear();
+      await Promise.all([
+        this.getDriverStandings(year, true),
+        this.getConstructorStandings(year, true),
+        this.getRacesForSeason(year, true),
+      ]);
+      isCurrentlySyncing = false;
+      lastSyncedTime = new Date();
+      lastSyncError = null;
+      notifySyncListeners();
+      return { success: true };
+    } catch (err: any) {
+      isCurrentlySyncing = false;
+      lastSyncError = err?.message || 'Failed to sync with official API';
+      notifySyncListeners();
+      return { success: false, error: lastSyncError ?? undefined };
+    }
+  },
+
   getAvailableYears(): number[] {
     const latestYear = 2026;
     const years: number[] = [];
@@ -41,57 +88,46 @@ export const JolpicaService = {
     return years;
   },
 
-  async getRacesForSeason(year: number): Promise<Race[]> {
-    if (F1_STANDINGS[year]?.races) {
-      return F1_STANDINGS[year].races;
-    }
-    if (year >= 2026) {
-      return SAMPLE_2026_RACES;
-    }
-
-    const url = `${BASE_URL}/${year}.json?limit=100`;
-    const fallback: any = { MRData: { RaceTable: { Races: [] } } };
-    const raw: any = await fetchWithCache(url, fallback);
+  async getRacesForSeason(year: number, force = false): Promise<Race[]> {
+    const fallbackRaces = F1_STANDINGS[year]?.races || SAMPLE_2026_RACES;
+    const endpoint = year === 2026 ? `/current.json?limit=100` : `/${year}.json?limit=100`;
+    const fallback = { MRData: { RaceTable: { Races: [] } } };
+    const raw: any = await fetchFromOfficialApi(endpoint, fallback, force);
     const racesRaw = raw?.MRData?.RaceTable?.Races;
 
     if (!racesRaw || racesRaw.length === 0) {
-      return SAMPLE_2026_RACES.map(r => ({
-        ...r,
-        season: year,
-        date: r.date.replace('2026', String(year)),
-      }));
+      return fallbackRaces;
     }
 
-    return racesRaw.map((r: any) => ({
-      season: r.season,
-      round: parseInt(r.round, 10),
-      url: r.url,
-      raceName: r.raceName,
-      circuitName: r.Circuit?.circuitName || 'Circuit',
-      circuitId: r.Circuit?.circuitId || 'circuit',
-      locality: r.Circuit?.Location?.locality,
-      country: r.Circuit?.Location?.country,
-      date: r.date,
-      time: r.time,
-      isCompleted: new Date(r.date) < new Date(),
-    }));
+    const todayStr = '2026-08-23';
+    return racesRaw.map((r: any) => {
+      const isCompleted = r.date < todayStr;
+      return {
+        season: parseInt(r.season, 10),
+        round: parseInt(r.round, 10),
+        url: r.url,
+        raceName: r.raceName,
+        circuitName: r.Circuit?.circuitName || 'Circuit',
+        circuitId: r.Circuit?.circuitId || 'circuit',
+        locality: r.Circuit?.Location?.locality,
+        country: r.Circuit?.Location?.country,
+        date: r.date,
+        time: r.time,
+        isCompleted,
+        totalLaps: 55,
+      };
+    });
   },
 
-  async getDriverStandings(year: number): Promise<DriverStanding[]> {
-    if (F1_STANDINGS[year]?.driverStandings) {
-      return F1_STANDINGS[year].driverStandings;
-    }
-    if (year >= 2026) {
-      return SAMPLE_2026_STANDINGS;
-    }
-
-    const url = `${BASE_URL}/${year}/driverStandings.json`;
-    const fallback: any = { MRData: { StandingsTable: { StandingsLists: [] } } };
-    const raw: any = await fetchWithCache(url, fallback);
+  async getDriverStandings(year: number, force = false): Promise<DriverStanding[]> {
+    const fallbackStandings = F1_STANDINGS[year]?.driverStandings || SAMPLE_2026_STANDINGS;
+    const endpoint = year === 2026 ? `/current/driverStandings.json` : `/${year}/driverStandings.json`;
+    const fallback = { MRData: { StandingsTable: { StandingsLists: [] } } };
+    const raw: any = await fetchFromOfficialApi(endpoint, fallback, force);
     const standingsList = raw?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings;
 
     if (!standingsList || standingsList.length === 0) {
-      return SAMPLE_2026_STANDINGS;
+      return fallbackStandings;
     }
 
     return standingsList.map((entry: any) => {
@@ -107,8 +143,8 @@ export const JolpicaService = {
       const knownDriver = DRIVERS[d.driverId] || {
         driverId: d.driverId,
         code: d.code || d.familyName?.substring(0, 3)?.toUpperCase(),
-        driverNumber: d.permanentNumber || entry.position,
-        permanentNumber: d.permanentNumber,
+        driverNumber: parseInt(d.permanentNumber || entry.position, 10),
+        permanentNumber: d.permanentNumber || entry.position,
         givenName: d.givenName,
         familyName: d.familyName,
         fullName: `${d.givenName} ${d.familyName}`,
@@ -130,21 +166,15 @@ export const JolpicaService = {
     });
   },
 
-  async getConstructorStandings(year: number): Promise<ConstructorStanding[]> {
-    if (F1_STANDINGS[year]?.constructorStandings) {
-      return F1_STANDINGS[year].constructorStandings;
-    }
-    if (year >= 2026) {
-      return SAMPLE_2026_CONSTRUCTOR_STANDINGS;
-    }
-
-    const url = `${BASE_URL}/${year}/constructorStandings.json`;
-    const fallback: any = { MRData: { StandingsTable: { StandingsLists: [] } } };
-    const raw: any = await fetchWithCache(url, fallback);
+  async getConstructorStandings(year: number, force = false): Promise<ConstructorStanding[]> {
+    const fallbackStandings = F1_STANDINGS[year]?.constructorStandings || SAMPLE_2026_CONSTRUCTOR_STANDINGS;
+    const endpoint = year === 2026 ? `/current/constructorStandings.json` : `/${year}/constructorStandings.json`;
+    const fallback = { MRData: { StandingsTable: { StandingsLists: [] } } };
+    const raw: any = await fetchFromOfficialApi(endpoint, fallback, force);
     const standingsList = raw?.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings;
 
     if (!standingsList || standingsList.length === 0) {
-      return SAMPLE_2026_CONSTRUCTOR_STANDINGS;
+      return fallbackStandings;
     }
 
     return standingsList.map((entry: any) => {
@@ -166,10 +196,10 @@ export const JolpicaService = {
     });
   },
 
-  async getRaceResults(year: number, round: number): Promise<RaceResult[]> {
-    const url = `${BASE_URL}/${year}/${round}/results.json`;
-    const fallback: any = { MRData: { RaceTable: { Races: [] } } };
-    const raw: any = await fetchWithCache(url, fallback);
+  async getRaceResults(year: number, round: number, force = false): Promise<RaceResult[]> {
+    const endpoint = year === 2026 ? `/current/${round}/results.json` : `/${year}/${round}/results.json`;
+    const fallback = { MRData: { RaceTable: { Races: [] } } };
+    const raw: any = await fetchFromOfficialApi(endpoint, fallback, force);
     const raceNode = raw?.MRData?.RaceTable?.Races?.[0];
     const resultsRaw = raceNode?.Results;
 
@@ -241,10 +271,6 @@ export const JolpicaService = {
   },
 
   async getSeasonMetrics(year: number): Promise<SeasonMetrics> {
-    if (F1_STANDINGS[year]?.metrics) {
-      return F1_STANDINGS[year].metrics;
-    }
-
     const [driverStandings, constructorStandings, races] = await Promise.all([
       this.getDriverStandings(year),
       this.getConstructorStandings(year),
@@ -254,7 +280,6 @@ export const JolpicaService = {
     const champDriver = driverStandings[0]?.driver.fullName || 'TBD';
     const champConstructor = constructorStandings[0]?.constructor.name || 'TBD';
     
-    // Find driver with most wins
     let topWinDriver = { name: champDriver, count: driverStandings[0]?.wins || 0 };
     for (const d of driverStandings) {
       if (d.wins > topWinDriver.count) {
@@ -264,8 +289,8 @@ export const JolpicaService = {
 
     return {
       year,
-      totalRaces: races.length || 24,
-      completedRaces: races.filter(r => r.isCompleted).length || races.length,
+      totalRaces: races.length || 23,
+      completedRaces: races.filter(r => r.isCompleted).length || 11,
       championDriver: champDriver,
       championConstructor: champConstructor,
       mostWinsDriver: topWinDriver,

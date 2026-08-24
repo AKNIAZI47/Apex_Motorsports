@@ -1076,7 +1076,7 @@ export const DRIFT_STANDINGS: Record<number, CategorySeasonData> = {
       {
         position: 1,
         positionText: '1',
-        points: 898,
+        points: 1068,
         wins: 4,
         constructor: {
           constructorId: 'rtr_drift',

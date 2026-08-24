@@ -1,19 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Trophy, 
-  Flag, 
   Calendar, 
-  Award, 
   ChevronRight, 
   Users, 
   Shield, 
-  Sparkles, 
-  Clock
+  Clock,
 } from 'lucide-react';
-import { Race, MotorsportCategory } from '../types';
+import { Race, MotorsportCategory, DriverStanding, ConstructorStanding, CategorySeasonData } from '../types';
 import { RaceDetailModal } from './RaceDetailModal';
 import { getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
+import { motorsportDailyLiveCollector } from '../services/motorsportDailyLiveCollector';
 
 const CATEGORIES_LIST: { id: MotorsportCategory; name: string; short: string; color: string }[] = [
   { id: 'F1', name: 'FIA Formula One', short: 'F1', color: '#e8002d' },
@@ -31,11 +29,23 @@ export const SeasonDashboard: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<MotorsportCategory>('F1');
   const [activeTab, setActiveTab] = useState<'calendar' | 'drivers' | 'constructors'>('calendar');
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
+  const [updateTick, setUpdateTick] = useState(0);
+
+  // Subscribe to automated daily live sync updates
+  useEffect(() => {
+    const handleUpdate = () => setUpdateTick((t) => t + 1);
+    window.addEventListener('motorsport_data_updated', handleUpdate);
+    const unsub = motorsportDailyLiveCollector.subscribe(handleUpdate);
+    return () => {
+      window.removeEventListener('motorsport_data_updated', handleUpdate);
+      unsub();
+    };
+  }, []);
 
   // Season data for selected category
   const seasonData = useMemo(() => {
     return getCategoryStandings(selectedCategory, CURRENT_YEAR);
-  }, [selectedCategory]);
+  }, [selectedCategory, updateTick]);
 
   const activeCategoryInfo = MOTORSPORT_CATEGORIES[selectedCategory];
   const { races, driverStandings, constructorStandings, metrics } = seasonData;
@@ -47,22 +57,22 @@ export const SeasonDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Category Discipline Selector Bar */}
-      <div className="bg-[#121215] border border-white/10 rounded-2xl p-2.5 shadow-xl">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <div className="bg-[#121215]/90 backdrop-blur-md border border-white/10 rounded-2xl p-2.5 shadow-xl">
+        <div className="flex items-center flex-wrap gap-2">
           {CATEGORIES_LIST.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
                   isSelected
-                    ? 'bg-gradient-to-r from-[#e8002d]/20 to-white/10 border-[#ff1744] text-white shadow-lg shadow-[#ff1744]/10'
-                    : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'
+                    ? 'bg-[#e8002d]/15 border-[#ff1744] text-white shadow-md shadow-[#ff1744]/15'
+                    : 'bg-white/[0.03] border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]'
                 }`}
               >
                 <span
-                  className="w-2 h-2 rounded-full"
+                  className="w-2 h-2 rounded-full shrink-0"
                   style={{ backgroundColor: cat.color }}
                 />
                 <span>{cat.short}</span>
@@ -138,7 +148,7 @@ export const SeasonDashboard: React.FC = () => {
               {races.filter((r) => r.isCompleted).length} / {races.length} Completed
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
-              Live official timekeeping
+              Next: {races.find((r) => !r.isCompleted)?.raceName || 'Season Completed'}
             </div>
           </div>
         </div>
@@ -211,7 +221,7 @@ export const SeasonDashboard: React.FC = () => {
                         #{race.round.toString().padStart(2, '0')}
                       </td>
                       <td className="py-3.5 px-6 font-bold text-white group-hover:text-[#ff4d6d] transition-colors">
-                        {race.raceName}
+                        <span>{race.raceName}</span>
                       </td>
                       <td className="py-3.5 px-6 text-slate-300">
                         <div>{race.circuitName}</div>
@@ -230,8 +240,8 @@ export const SeasonDashboard: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xs text-emerald-400 font-mono flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 animate-pulse" />
+                          <span className="text-xs text-slate-400 font-mono flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-slate-500" />
                             Upcoming Round
                           </span>
                         )}
@@ -242,7 +252,7 @@ export const SeasonDashboard: React.FC = () => {
                             {race.winner.time}
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-600 font-mono">
+                          <span className="text-xs text-slate-500 font-mono">
                             {race.totalLaps ? `${race.totalLaps} Laps Scheduled` : 'Scheduled'}
                           </span>
                         )}
@@ -281,21 +291,19 @@ export const SeasonDashboard: React.FC = () => {
 
                   return (
                     <tr
-                      key={ds.driver.driverId}
-                      className={`hover:bg-white/[0.04] transition-colors ${
-                        isTop3 ? 'bg-white/[0.01]' : ''
-                      }`}
+                      key={`${ds.driver.driverId}-${ds.position}`}
+                      className="hover:bg-white/[0.04] transition-colors font-medium"
                     >
-                      <td className="py-3.5 px-4 font-mono font-bold">
+                      <td className="py-3.5 px-4">
                         <span
-                          className={`inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-bold ${
+                          className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black font-mono ${
                             ds.position === 1
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                              ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20'
                               : ds.position === 2
-                              ? 'bg-slate-300/20 text-slate-200 border border-slate-300/40'
+                              ? 'bg-slate-300 text-black'
                               : ds.position === 3
-                              ? 'bg-amber-700/20 text-amber-400 border border-amber-700/40'
-                              : 'text-slate-400'
+                              ? 'bg-amber-700 text-white'
+                              : 'text-slate-400 bg-white/5'
                           }`}
                         >
                           {ds.position}
@@ -303,44 +311,47 @@ export const SeasonDashboard: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-6">
                         <div className="flex items-center gap-3">
-                          <div
-                            className="w-1.5 h-8 rounded-full"
-                            style={{
-                              backgroundColor:
-                                ds.driver.teamColor || ctor?.color || '#888',
-                            }}
+                          <span
+                            className="w-1.5 h-6 rounded-full"
+                            style={{ backgroundColor: ds.driver.teamColor || '#ff1744' }}
                           />
                           <div>
                             <div className="font-bold text-white flex items-center gap-2">
                               <span>{ds.driver.fullName}</span>
-                              {ds.driver.permanentNumber && (
-                                <span className="font-mono text-xs text-slate-500 font-normal">
-                                  #{ds.driver.permanentNumber}
-                                </span>
-                              )}
+                              <span className="text-[11px] font-mono text-slate-400">
+                                #{ds.driver.driverNumber || ds.driver.permanentNumber}
+                              </span>
                             </div>
                             <div className="text-xs text-slate-400">
-                              {ctor?.name || ds.driver.constructorName}
+                              {ds.driver.code}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-300 text-xs font-mono">
+                      <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
                         {ds.driver.nationality}
                       </td>
-                      <td className="py-3.5 px-6 text-slate-200 font-semibold text-xs">
-                        <div>{ctor?.name || ds.driver.constructorName}</div>
+                      <td className="py-3.5 px-6">
+                        <div className="font-medium text-slate-200">
+                          {ctor?.name || ds.driver.constructorName}
+                        </div>
                         {ctor?.carModel && (
-                          <div className="text-[10px] text-slate-500 font-mono font-normal">
+                          <div className="text-xs text-slate-500 font-mono">
                             {ctor.carModel}
                           </div>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-center font-mono font-bold text-amber-400">
-                        {ds.wins}
+                      <td className="py-3.5 px-4 text-center font-mono font-bold text-white">
+                        {ds.wins > 0 ? (
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs border border-emerald-500/30">
+                            {ds.wins} {ds.wins === 1 ? 'Win' : 'Wins'}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">0</span>
+                        )}
                       </td>
-                      <td className="py-3.5 px-6 text-right font-mono font-black text-white text-base">
-                        {ds.points} PTS
+                      <td className="py-3.5 px-6 text-right font-mono font-black text-base text-white">
+                        {ds.points}
                       </td>
                     </tr>
                   );
@@ -350,7 +361,7 @@ export const SeasonDashboard: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* Constructors Standings View */
+        /* Constructor Standings View */
         <div className="bg-[#121215] border border-white/10 rounded-xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -358,72 +369,71 @@ export const SeasonDashboard: React.FC = () => {
                 <tr className="bg-[#18181b] border-b border-white/10 text-xs font-bold text-slate-400 uppercase tracking-wider">
                   <th className="py-3.5 px-4">Pos</th>
                   <th className="py-3.5 px-6">Team / Manufacturer</th>
-                  <th className="py-3.5 px-4">Engine / Powertrain</th>
-                  <th className="py-3.5 px-6">Principal / Base</th>
+                  <th className="py-3.5 px-4">Base / Country</th>
+                  <th className="py-3.5 px-6">Power Unit / Chassis</th>
                   <th className="py-3.5 px-4 text-center">Wins</th>
                   <th className="py-3.5 px-6 text-right">Points</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {constructorStandings.map((cs) => {
-                  const isTop3 = cs.position <= 3;
-
-                  return (
-                    <tr
-                      key={cs.constructor.constructorId}
-                      className={`hover:bg-white/[0.04] transition-colors ${
-                        isTop3 ? 'bg-white/[0.01]' : ''
-                      }`}
-                    >
-                      <td className="py-3.5 px-4 font-mono font-bold">
+                {constructorStandings.map((cs) => (
+                  <tr
+                    key={cs.constructor.constructorId}
+                    className="hover:bg-white/[0.04] transition-colors font-medium"
+                  >
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black font-mono ${
+                          cs.position === 1
+                            ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20'
+                            : cs.position === 2
+                            ? 'bg-slate-300 text-black'
+                            : cs.position === 3
+                            ? 'bg-amber-700 text-white'
+                            : 'text-slate-400 bg-white/5'
+                        }`}
+                      >
+                        {cs.position}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-6">
+                      <div className="flex items-center gap-3">
                         <span
-                          className={`inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-bold ${
-                            cs.position === 1
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                              : cs.position === 2
-                              ? 'bg-slate-300/20 text-slate-200 border border-slate-300/40'
-                              : cs.position === 3
-                              ? 'bg-amber-700/20 text-amber-400 border border-amber-700/40'
-                              : 'text-slate-400'
-                          }`}
-                        >
-                          {cs.position}
+                          className="w-1.5 h-6 rounded-full"
+                          style={{ backgroundColor: cs.constructor.color || '#ff1744' }}
+                        />
+                        <span className="font-bold text-white">
+                          {cs.constructor.name}
                         </span>
-                      </td>
-                      <td className="py-3.5 px-6">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-2.5 h-8 rounded"
-                            style={{ backgroundColor: cs.constructor.color || '#888' }}
-                          />
-                          <div>
-                            <div className="font-bold text-white text-base">
-                              {cs.constructor.name}
-                            </div>
-                            <div className="text-xs text-slate-400 font-mono">
-                              {cs.constructor.nationality}
-                            </div>
-                          </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
+                      {cs.constructor.nationality}
+                    </td>
+                    <td className="py-3.5 px-6">
+                      <div className="text-slate-300 text-xs font-mono truncate max-w-xs">
+                        {cs.constructor.powerUnit || 'Hybrid Turbo'}
+                      </div>
+                      {cs.constructor.carModel && (
+                        <div className="text-xs text-slate-500 font-mono">
+                          {cs.constructor.carModel}
                         </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300 text-xs font-mono">
-                        <div>{cs.constructor.powerUnit || 'Competition Powertrain'}</div>
-                        {cs.constructor.carModel && (
-                          <div className="text-slate-500">{cs.constructor.carModel}</div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-6 text-slate-300 text-xs">
-                        {cs.constructor.teamPrincipal || cs.constructor.nationality}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-mono font-bold text-amber-400">
-                        {cs.wins}
-                      </td>
-                      <td className="py-3.5 px-6 text-right font-mono font-black text-white text-base">
-                        {cs.points} PTS
-                      </td>
-                    </tr>
-                  );
-                })}
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-mono font-bold text-white">
+                      {cs.wins > 0 ? (
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs border border-emerald-500/30">
+                          {cs.wins} {cs.wins === 1 ? 'Win' : 'Wins'}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">0</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-6 text-right font-mono font-black text-base text-white">
+                      {cs.points}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

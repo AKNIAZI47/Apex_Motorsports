@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   Activity, 
   Newspaper, 
-  Bot, 
   LayoutDashboard, 
   Grid, 
   User, 
@@ -11,7 +10,6 @@ import {
 } from 'lucide-react';
 import { CircuitMapReplay } from './components/CircuitMapReplay';
 import { NewsPanel } from './components/NewsPanel';
-import { F1Assistant } from './components/F1Assistant';
 import { SeasonDashboard } from './components/SeasonDashboard';
 import { GridView } from './components/GridView';
 import { DriverProfile } from './components/DriverProfile';
@@ -28,8 +26,7 @@ export type TabType =
   | 'driver' 
   | 'constructor' 
   | 'comparison'
-  | 'news' 
-  | 'ai-assistant';
+  | 'news';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -55,8 +52,7 @@ export function App() {
     { id: 'driver', label: 'Driver Profiles', icon: User },
     { id: 'comparison', label: 'Head-to-Head', icon: ArrowRightLeft },
     { id: 'constructor', label: 'Constructors', icon: Shield },
-    { id: 'news', label: 'Motorsport Wire', icon: Newspaper },
-    { id: 'ai-assistant', label: 'Ask Apex AI', icon: Bot },
+    { id: 'news', label: 'Motorsport News', icon: Newspaper },
   ];
 
   return (
@@ -117,7 +113,6 @@ export function App() {
           {activeTab === 'comparison' && <DriverComparison />}
           {activeTab === 'constructor' && <ConstructorProfile onSelectDriver={handleSelectDriver} />}
           {activeTab === 'news' && <NewsPanel />}
-          {activeTab === 'ai-assistant' && <F1Assistant />}
         </ErrorBoundary>
       </main>
 

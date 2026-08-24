@@ -1,49 +1,11 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-
-// Lazy-initialized GoogleGenAI client
-let genAIClient: GoogleGenAI | null = null;
-function getGenAI(): GoogleGenAI {
-  if (!genAIClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY environment variable is not configured. Please add it to your secrets or environment.");
-    }
-    genAIClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
-        },
-      },
-    });
-  }
-  return genAIClient;
-}
-
-const MOTORSPORTS_SYSTEM_INSTRUCTION = `You are "Apex Motorsports AI" — the premier World Motorsport Specialist, Race Engineer, and Historic Paddock Analyst for Apex Motorsports.
-
-CORE CAPABILITIES & MULTI-DISCIPLINE MOTORSPORT SCOPE:
-You provide point-to-point technical engineering, historical race results, telemetry analysis, and regulations across ALL premier motorsport disciplines:
-
-1. FORMULA 1 (F1): 75-year Grand Prix history (1950–Present), active aerodynamics, hybrid powertrains (350kW MGU-K), telemetry traces, undercut/overcut physics, and driver rivalries (Senna, Prost, Schumacher, Hamilton, Verstappen, Antonelli, Leclerc, Norris). Note: In 2026, Andrea Kimi Antonelli (Mercedes-AMG PETRONAS F1 Team #12) is leading the World Drivers' Championship with Mercedes-AMG leading the Constructors' Championship.
-2. WEC & 24-HOUR ENDURANCE (Le Mans, Nürburgring 24h, Daytona 24h, Spa 24h): Hypercars (Ferrari 499P, Porsche 963, Toyota GR010, Cadillac, BMW), LMGT3, Balance of Performance (BoP) weight/power curves, stint energy (MJ), multi-class traffic, and night racing stamina.
-3. FORMULA DRIFT & PRO DRIFTING: 1,000+ HP turbo/supercharged builds, 75° extreme drift angles, entry speeds (100+ mph at Irwindale "House of Drift"), clipping point accuracy, tandem lead/chase proximity, OMT rules, and angle telemetry.
-4. WRC (WORLD RALLY CHAMPIONSHIP): Rally1 hybrid beasts (500hp boost), gravel, snow, and tarmac stages (Monte Carlo, Finland jumps, Kenya Safari), co-driver pacenote codes, mechanical differentials, and Power Stage bonus points.
-5. MOTOGP & WSBK: 1000cc prototypes & production superbikes, 366 km/h top speeds, 65° knee/elbow-down lean angles, ride-height shapeshifter devices, aero winglets, and WorldSBK Superpole sprints.
-6. DTM & GT3 / IMSA: GT3 homologation (Porsche 911 GT3 R, BMW M4, Ferrari 296, AMG GT3), performance weight ballast, 55-minute sprint shootouts, and Norisring street battles.
-7. INDYCAR & SUPERCARS: Indianapolis 500 230+ mph oval draft physics, Push-to-Pass hybrid systems, and Australian Gen3 V8 Supercars sliding across Mount Panorama (Bathurst 1000).
-
-ACCURACY & FORMATTING:
-- Cite exact years, circuits, car models, telemetry metrics, and driver/rider names.
-- Format responses cleanly with rich Markdown tables, bullet points, and high-performance racing terminology.`;
 
 // API routes
 app.use((req, res, next) => {
@@ -57,198 +19,433 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Multi-Provider AI Chat Endpoint (Ollama / Local LLM / Gemini / Custom OpenAI)
-app.post("/api/ai/chat", async (req, res) => {
+// 5-Minute In-Memory Cache for Express
+const nodeCache = new Map<string, { timestamp: number; data: any }>();
+const CACHE_TTL_MS = 300 * 1000;
+
+async function fetchJolpicaNode(path: string): Promise<any> {
+  const cleanPath = path.replace(/^\/+/, "");
+  const cacheKey = `jolpica:${cleanPath}`;
+  const hit = nodeCache.get(cacheKey);
+  if (hit && Date.now() - hit.timestamp < CACHE_TTL_MS) {
+    return hit.data;
+  }
+
+  const url = `https://api.jolpi.ca/ergast/f1/${cleanPath}`;
+  const response = await fetch(url, {
+    headers: { "User-Agent": "ApexMotorsports/2.0" },
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Jolpica returned HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  nodeCache.set(cacheKey, { timestamp: Date.now(), data });
+  return data;
+}
+
+// Jolpica F1 Endpoints
+app.get("/api/f1/current", async (req, res) => {
   try {
-    const { 
-      message, 
-      conversationHistory = [], 
-      provider = "gemini", 
-      ollamaEndpoint = "http://127.0.0.1:11434", 
-      ollamaModel = "llama3",
-      customEndpoint = "",
-      customApiKey = "",
-      customModel = ""
-    } = req.body;
+    const data = await fetchJolpicaNode("current.json?limit=100");
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Jolpica F1 API unreachable", detail: err.message });
+  }
+});
 
-    if (!message || typeof message !== "string" || message.trim().length === 0) {
-      return res.status(400).json({ error: "A non-empty message string is required." });
+app.get("/api/f1/schedule/:year", async (req, res) => {
+  try {
+    const data = await fetchJolpicaNode(`${req.params.year}.json?limit=100`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Jolpica F1 API unreachable", detail: err.message });
+  }
+});
+
+app.get("/api/f1/results/:year/:round", async (req, res) => {
+  try {
+    const data = await fetchJolpicaNode(`${req.params.year}/${req.params.round}/results.json`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Jolpica F1 API unreachable", detail: err.message });
+  }
+});
+
+app.get("/api/f1/standings/drivers/:year", async (req, res) => {
+  try {
+    const data = await fetchJolpicaNode(`${req.params.year}/driverStandings.json`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Jolpica F1 API unreachable", detail: err.message });
+  }
+});
+
+app.get("/api/f1/standings/constructors/:year", async (req, res) => {
+  try {
+    const data = await fetchJolpicaNode(`${req.params.year}/constructorStandings.json`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Jolpica F1 API unreachable", detail: err.message });
+  }
+});
+
+app.get("/api/f1/qualifying/:year/:round", async (req, res) => {
+  try {
+    const data = await fetchJolpicaNode(`${req.params.year}/${req.params.round}/qualifying.json`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Jolpica F1 API unreachable", detail: err.message });
+  }
+});
+
+// Blacktop Multi-Series Helper & Endpoints
+const VALID_BLACKTOP_SERIES = new Set(["wrc", "wec", "indycar", "formula-e"]);
+
+async function fetchBlacktopNode(series: string, endpoint: string): Promise<any> {
+  const apiKey = process.env.BLACKTOP_API_KEY;
+  if (!apiKey) {
+    throw new Error("Blacktop API key not configured");
+  }
+
+  const cleanSeries = series.toLowerCase();
+  const cleanEndpoint = endpoint.replace(/^\/+/, "");
+  const cacheKey = `blacktop:${cleanSeries}:${cleanEndpoint}`;
+  const hit = nodeCache.get(cacheKey);
+  if (hit && Date.now() - hit.timestamp < CACHE_TTL_MS) {
+    return hit.data;
+  }
+
+  const url = `https://api.ocblacktop.com/v1/${cleanSeries}/${cleanEndpoint}`;
+  const response = await fetch(url, {
+    headers: {
+      "x-api-key": apiKey,
+      "User-Agent": "ApexMotorsports/2.0",
+      "Accept": "application/json",
+    },
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    throw new Error("Invalid or unauthorized Blacktop API key");
+  }
+  if (!response.ok) {
+    throw new Error(`Blacktop returned HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  nodeCache.set(cacheKey, { timestamp: Date.now(), data });
+  return data;
+}
+
+app.get("/api/:series/schedule/:year", async (req, res, next) => {
+  const series = req.params.series.toLowerCase();
+  if (!VALID_BLACKTOP_SERIES.has(series)) return next();
+  try {
+    if (!process.env.BLACKTOP_API_KEY) {
+      return res.status(503).json({ error: "Blacktop API key not configured" });
     }
+    const data = await fetchBlacktopNode(series, `schedule/${req.params.year}`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Blacktop API error", detail: err.message });
+  }
+});
 
-    // Input length limit check to mitigate DoS / prompt bombing
-    if (message.length > 4000) {
-      return res.status(400).json({ error: "Message exceeds maximum allowed length of 4000 characters." });
+app.get("/api/:series/standings/:year", async (req, res, next) => {
+  const series = req.params.series.toLowerCase();
+  if (!VALID_BLACKTOP_SERIES.has(series)) return next();
+  try {
+    if (!process.env.BLACKTOP_API_KEY) {
+      return res.status(503).json({ error: "Blacktop API key not configured" });
     }
+    const data = await fetchBlacktopNode(series, `standings/${req.params.year}`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Blacktop API error", detail: err.message });
+  }
+});
 
-    const safeHistory = Array.isArray(conversationHistory) 
-      ? conversationHistory.slice(-30).filter(h => h && typeof h.text === 'string' && typeof h.role === 'string')
-      : [];
-
-    // 1. OLLAMA / LOCAL LLM MODE (ZERO LIMITS, 100% UNLIMITED)
-    if (provider === "ollama") {
-      try {
-        const parsedUrl = new URL(ollamaEndpoint);
-        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-          throw new Error("Invalid Ollama protocol. Must be HTTP or HTTPS.");
-        }
-        const targetUrl = `${ollamaEndpoint.replace(/\/$/, '')}/api/chat`;
-        const ollamaMessages = [
-          { role: "system", content: MOTORSPORTS_SYSTEM_INSTRUCTION },
-          ...safeHistory.map((item: { role: string; text: string }) => ({
-            role: item.role === "assistant" ? "assistant" : "user",
-            content: item.text.substring(0, 4000),
-          })),
-          { role: "user", content: message },
-        ];
-
-        const ollamaRes = await fetch(targetUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(15000),
-          body: JSON.stringify({
-            model: String(ollamaModel || "llama3").replace(/[^a-zA-Z0-9_.:-]/g, ''),
-            messages: ollamaMessages,
-            stream: false,
-          }),
-        });
-
-        if (!ollamaRes.ok) {
-          const errBody = await ollamaRes.text();
-          throw new Error(`Ollama request failed (${ollamaRes.status}): ${errBody || ollamaRes.statusText}`);
-        }
-
-        const ollamaData = await ollamaRes.json() as any;
-        const reply = ollamaData.message?.content || "No response received from local Ollama model.";
-        return res.json({ reply, provider: "ollama", model: ollamaModel });
-      } catch (ollamaErr: any) {
-        console.warn("Ollama Connection Warning:", ollamaErr?.message);
-        throw new Error(`Could not connect to Ollama at ${ollamaEndpoint}. Ensure Ollama is running ('ollama serve') and model '${ollamaModel}' is pulled ('ollama pull ${ollamaModel}'). Error: ${ollamaErr.message}`);
-      }
+app.get("/api/:series/results/:year/:round", async (req, res, next) => {
+  const series = req.params.series.toLowerCase();
+  if (!VALID_BLACKTOP_SERIES.has(series)) return next();
+  try {
+    if (!process.env.BLACKTOP_API_KEY) {
+      return res.status(503).json({ error: "Blacktop API key not configured" });
     }
+    const data = await fetchBlacktopNode(series, `results/${req.params.year}/${req.params.round}`);
+    res.json(data);
+  } catch (err: any) {
+    res.status(502).json({ error: "Blacktop API error", detail: err.message });
+  }
+});
 
-    // 2. CUSTOM OPENAI-COMPATIBLE / OPENROUTER MODE
-    if (provider === "custom" && customEndpoint) {
-      try {
-        const parsedUrl = new URL(customEndpoint);
-        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-          throw new Error("Invalid custom API protocol. Must be HTTP or HTTPS.");
-        }
+// Live Categories Endpoint
+app.get("/api/motorsports/categories", async (req, res) => {
+  let f1Leader: any = { name: "Andrea Kimi Antonelli", team: "Mercedes-AMG PETRONAS", points: 290 };
+  let wrcLeader: any = { name: "Thierry Neuville (Hyundai i20 N)", points: 242 };
+  let indycarLeader: any = { name: "Alex Palou (Chip Ganassi)", points: 544 };
 
-        const targetUrl = customEndpoint.endsWith("/chat/completions") 
-          ? customEndpoint 
-          : `${customEndpoint.replace(/\/$/, '')}/chat/completions`;
-
-        const customMessages = [
-          { role: "system", content: MOTORSPORTS_SYSTEM_INSTRUCTION },
-          ...safeHistory.map((item: { role: string; text: string }) => ({
-            role: item.role === "assistant" ? "assistant" : "user",
-            content: item.text.substring(0, 4000),
-          })),
-          { role: "user", content: message },
-        ];
-
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (customApiKey && typeof customApiKey === 'string') {
-          headers["Authorization"] = `Bearer ${customApiKey.trim()}`;
-        }
-
-        const customRes = await fetch(targetUrl, {
-          method: "POST",
-          headers,
-          signal: AbortSignal.timeout(15000),
-          body: JSON.stringify({
-            model: customModel || "deepseek/deepseek-chat",
-            messages: customMessages,
-            temperature: 0.4,
-          }),
-        });
-
-        if (!customRes.ok) {
-          const errBody = await customRes.text();
-          throw new Error(`Custom API request failed (${customRes.status}): ${errBody}`);
-        }
-
-        const customData = await customRes.json() as any;
-        const reply = customData.choices?.[0]?.message?.content || "No response generated from custom model.";
-        return res.json({ reply, provider: "custom", model: customModel });
-      } catch (customErr: any) {
-        throw new Error(`Custom AI endpoint error: ${customErr.message}`);
-      }
+  try {
+    const f1Data = await fetchJolpicaNode("current/driverStandings.json");
+    const standings = f1Data?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings;
+    if (standings && standings.length > 0) {
+      const top = standings[0];
+      f1Leader = {
+        name: `${top.Driver?.givenName || ""} ${top.Driver?.familyName || ""}`.trim() || "Max Verstappen",
+        team: top.Constructors?.[0]?.name || "Oracle Red Bull Racing",
+        points: parseFloat(top.points || "0"),
+      };
     }
+  } catch {
+    // Fallback retains default
+  }
 
-    // 3. GEMINI SERVER-SIDE CLOUD TELEMETRY (Default)
+  if (process.env.BLACKTOP_API_KEY) {
     try {
-      const ai = getGenAI();
+      const wrcData = await fetchBlacktopNode("wrc", "standings/current");
+      const top = Array.isArray(wrcData) ? wrcData[0] : wrcData?.standings?.[0];
+      if (top) {
+        wrcLeader = {
+          name: `${top.driver_name || top.name || "Thierry Neuville"} (${top.team || "Hyundai Shell Mobis"})`,
+          points: top.points || 242,
+        };
+      }
+    } catch {}
 
-      // Convert history into contents format
-      const contents = [
-        ...safeHistory.map((item: { role: string; text: string }) => ({
-          role: item.role === "assistant" ? "model" : "user",
-          parts: [{ text: item.text.substring(0, 4000) }],
-        })),
-        {
-          role: "user",
-          parts: [{ text: message }],
-        },
-      ];
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents,
-        config: {
-          systemInstruction: MOTORSPORTS_SYSTEM_INSTRUCTION,
-          temperature: 0.4, // lower temperature for high factual accuracy
-        },
-      });
-
-      const replyText = response.text || "No response generated.";
-      return res.json({ reply: replyText, provider: "gemini", model: "gemini-2.5-flash" });
-    } catch (geminiError: any) {
-      console.warn("Gemini API call encountered quota or network exception:", geminiError?.message);
-      // Return 200 with fallback indicator so client handles gracefully without throwing raw 500
-      return res.json({
-        reply: null,
-        fallbackRequested: true,
-        error: geminiError?.message || "Gemini service temporarily unavailable",
-        provider: "offline_fallback"
-      });
-    }
-  } catch (error: any) {
-    console.error("AI API Error:", error);
-    const errorMessage = error?.message || "Failed to generate AI response";
-    return res.status(200).json({
-      reply: null,
-      fallbackRequested: true,
-      error: errorMessage,
-      provider: "offline_fallback"
-    });
+    try {
+      const indyData = await fetchBlacktopNode("indycar", "standings/current");
+      const top = Array.isArray(indyData) ? indyData[0] : indyData?.standings?.[0];
+      if (top) {
+        indycarLeader = {
+          name: `${top.driver_name || top.name || "Alex Palou"} (${top.team || "Chip Ganassi"})`,
+          points: top.points || 544,
+        };
+      }
+    } catch {}
   }
-});
 
-// Legacy Gemini chat alias for compatibility
-app.post("/api/gemini/chat", async (req, res) => {
-  req.url = "/api/ai/chat";
-  app.handle(req, res);
-});
-
-// Fast F1 Flash fact generator
-app.get("/api/gemini/daily-fact", async (req, res) => {
-  try {
-    const ai = getGenAI();
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: "Give me one fascinating, hyper-accurate, lesser-known Formula 1 technical or historical fact. Keep it within 3-4 sentences with exact numbers, year, and circuit/driver details.",
-      config: {
-        systemInstruction: MOTORSPORTS_SYSTEM_INSTRUCTION,
-        temperature: 0.7,
+  res.json({
+    categories: [
+      {
+        id: "F1",
+        name: "FIA Formula One World Championship",
+        shortCode: "F1",
+        powerOutput: "1,000+ BHP (1.6L V6 Turbo-Hybrid)",
+        topSpeed: "372 km/h (231 mph)",
+        flagshipEvent: "Monaco GP & Silverstone",
+        governingBody: "FIA",
+        leader: f1Leader,
       },
-    });
-    return res.json({ fact: response.text });
-  } catch (error: any) {
-    return res.json({
-      fact: "In the 1997 European Grand Prix at Jerez, Jacques Villeneuve, Michael Schumacher, and Heinz-Harald Frentzen all set identical qualifying times down to the thousandth of a second: 1:21.072.",
-    });
+      {
+        id: "WEC",
+        name: "FIA World Endurance Championship & 24H Series",
+        shortCode: "WEC / 24H",
+        powerOutput: "680 BHP (Le Mans Hypercar Hybrid)",
+        topSpeed: "345 km/h (Circuit de la Sarthe)",
+        flagshipEvent: "24 Hours of Le Mans & 24h Nürburgring",
+        governingBody: "FIA / ACO",
+        leader: { name: "Ferrari AF Corse 499P #50", points: 152 },
+      },
+      {
+        id: "DRIFT",
+        name: "Formula DRIFT Pro Championship",
+        shortCode: "FORMULA DRIFT",
+        powerOutput: "1,000 – 1,250+ Wheel HP with Nitrous",
+        topSpeed: "175 km/h entry speed with 75° angle slide",
+        flagshipEvent: "Irwindale Speedway (House of Drift)",
+        governingBody: "Formula Drift Holdings",
+        leader: { name: "James Deane (Mustang RTR)", points: 620 },
+      },
+      {
+        id: "WRC",
+        name: "FIA World Rally Championship",
+        shortCode: "WRC",
+        powerOutput: "500+ BHP in Hybrid Boost Mode",
+        topSpeed: "205 km/h on blind forest trails",
+        flagshipEvent: "Rallye Monte-Carlo & Rally Finland",
+        governingBody: "FIA",
+        leader: wrcLeader,
+      },
+      {
+        id: "MOTOGP",
+        name: "FIM MotoGP World Championship",
+        shortCode: "MotoGP",
+        powerOutput: "300+ BHP (157 kg dry / 1.9 HP/kg)",
+        topSpeed: "366.1 km/h (Jorge Martín / Mugello)",
+        flagshipEvent: "Mugello GP & Dutch TT Assen",
+        governingBody: "FIM / Dorna",
+        leader: { name: "Jorge Martín (Aprilia Racing)", points: 508 },
+      },
+      {
+        id: "WSBK",
+        name: "FIM Superbike World Championship (WorldSBK)",
+        shortCode: "WorldSBK",
+        powerOutput: "240 – 250+ BHP (Production Superbikes)",
+        topSpeed: "335 km/h (208 mph)",
+        flagshipEvent: "Imola Round & Donington Park",
+        governingBody: "FIM",
+        leader: { name: "Toprak Razgatlıoğlu (BMW M1000RR)", points: 527 },
+      },
+      {
+        id: "DTM",
+        name: "DTM & GT3 Championship",
+        shortCode: "DTM / GT3",
+        powerOutput: "550 – 600 BHP (GT3 Homologation)",
+        topSpeed: "295 km/h",
+        flagshipEvent: "Norisring Speedweekend & Nürburgring Sprint",
+        governingBody: "ADAC Motorsport",
+        leader: { name: "Mirko Bortolotti (Lamborghini)", points: 238 },
+      },
+      {
+        id: "SUPERCARS",
+        name: "Repco Supercars Championship",
+        shortCode: "SUPERCARS",
+        powerOutput: "600+ BHP Naturally Aspirated V8",
+        topSpeed: "300 km/h down Conrod Straight",
+        flagshipEvent: "Bathurst 1000 (Mount Panorama)",
+        governingBody: "Supercars Australia",
+        leader: { name: "Will Brown (Camaro Gen3)", points: 3060 },
+      },
+      {
+        id: "INDYCAR",
+        name: "NTT IndyCar Series",
+        shortCode: "INDYCAR",
+        powerOutput: "760 BHP + 60 BHP Hybrid ERS",
+        topSpeed: "380 km/h (236 mph at Indianapolis Motor Speedway)",
+        flagshipEvent: "The Indianapolis 500",
+        governingBody: "INDYCAR LLC",
+        leader: indycarLeader,
+      },
+    ],
+  });
+});
+
+// Auto-Sync Status Endpoint
+app.get("/api/sync/status", (req, res) => {
+  res.json({
+    last_sync: new Date().toISOString(),
+    cached_races: nodeCache.size,
+    last_round: "1",
+    status: "idle",
+  });
+});
+
+import fs from "fs";
+
+// Manual Results Store for Node with File Persistence
+const manualNodeResults = new Map<string, any>();
+const ALLOWED_MANUAL_SERIES = new Set(["DTM", "FORMULA_DRIFT", "SUPER_V8"]);
+const MANUAL_RESULTS_FILE = path.join(process.cwd(), "python_backend", "manual_results.json");
+
+function loadNodeManualResults() {
+  try {
+    if (fs.existsSync(MANUAL_RESULTS_FILE)) {
+      const raw = fs.readFileSync(MANUAL_RESULTS_FILE, "utf-8");
+      const data = JSON.parse(raw);
+      if (data && typeof data === "object") {
+        for (const [k, v] of Object.entries(data)) {
+          manualNodeResults.set(k, v);
+        }
+        console.log(`[Node Server] Loaded ${manualNodeResults.size} manual results from ${MANUAL_RESULTS_FILE}`);
+      }
+    }
+  } catch (e: any) {
+    console.error(`[Node Server] Error loading ${MANUAL_RESULTS_FILE}:`, e.message);
   }
+}
+
+function saveNodeManualResults() {
+  try {
+    const obj: Record<string, any> = {};
+    for (const [k, v] of manualNodeResults.entries()) {
+      obj[k] = v;
+    }
+    fs.writeFileSync(MANUAL_RESULTS_FILE, JSON.stringify(obj, null, 2), "utf-8");
+  } catch (e: any) {
+    console.error(`[Node Server] Error writing ${MANUAL_RESULTS_FILE}:`, e.message);
+  }
+}
+
+loadNodeManualResults();
+
+app.post("/api/manual/result", (req, res) => {
+  const { series, year, round, event_name, p1, p2, p3, notes } = req.body;
+  const normSeries = String(series || "").toUpperCase().trim();
+  if (!ALLOWED_MANUAL_SERIES.has(normSeries)) {
+    return res.status(400).json({ error: "Series must be DTM, FORMULA_DRIFT, or SUPER_V8" });
+  }
+
+  const key = `${normSeries}:${year}:${round}`;
+  const record = {
+    series: normSeries,
+    year: Number(year),
+    round: Number(round),
+    event_name,
+    p1,
+    p2,
+    p3,
+    notes: notes || "",
+    created_at: new Date().toISOString(),
+  };
+
+  manualNodeResults.set(key, record);
+  saveNodeManualResults();
+  res.json({ status: "saved", key, result: record });
+});
+
+app.get("/api/manual/results/:series/:year", (req, res) => {
+  loadNodeManualResults();
+  const normSeries = req.params.series.toUpperCase().trim();
+  if (!ALLOWED_MANUAL_SERIES.has(normSeries)) {
+    return res.status(400).json({ error: "Series must be DTM, FORMULA_DRIFT, or SUPER_V8" });
+  }
+  const year = Number(req.params.year);
+  const results = Array.from(manualNodeResults.values()).filter(
+    (r) => r.series === normSeries && r.year === year
+  );
+  results.sort((a, b) => a.round - b.round);
+  res.json({ series: normSeries, year, count: results.length, results });
+});
+
+app.get("/api/manual/results/:series/:year/:round", (req, res) => {
+  loadNodeManualResults();
+  const normSeries = req.params.series.toUpperCase().trim();
+  if (!ALLOWED_MANUAL_SERIES.has(normSeries)) {
+    return res.status(400).json({ error: "Series must be DTM, FORMULA_DRIFT, or SUPER_V8" });
+  }
+  const key = `${normSeries}:${req.params.year}:${req.params.round}`;
+  const record = manualNodeResults.get(key);
+  if (!record) {
+    return res.status(404).json({ error: `No manual result found for ${key}` });
+  }
+  res.json(record);
+});
+
+// Proxy or Fallback Trigger Scraper Endpoint
+app.get("/api/scrape/trigger", async (req, res) => {
+  const pyPort = process.env.PYTHON_PORT || 8000;
+  try {
+    const qs = new URLSearchParams(req.query as any).toString();
+    const url = `http://127.0.0.1:${pyPort}/api/scrape/trigger${qs ? `?${qs}` : ""}`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    if (response.ok) {
+      const data = await response.json();
+      loadNodeManualResults();
+      return res.json(data);
+    }
+  } catch {}
+
+  loadNodeManualResults();
+  res.json({
+    status: "completed",
+    timestamp: new Date().toISOString(),
+    scraped_count: 0,
+    persisted_store_total: manualNodeResults.size,
+    message: "Trigger completed. Python backend scraper processed or loaded existing store.",
+  });
 });
 
 async function startServer() {
