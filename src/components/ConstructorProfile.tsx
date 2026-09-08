@@ -6,23 +6,24 @@ import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
 
 interface Props {
   onSelectDriver?: (driver: Driver) => void;
+  category?: MotorsportCategory;
+  onSelectCategory?: (category: MotorsportCategory) => void;
 }
 
-const CATEGORY_CHIPS: { id: MotorsportCategory; label: string; color: string }[] = [
-  { id: 'F1', label: 'Formula 1', color: '#e8002d' },
-  { id: 'MOTOGP', label: 'MotoGP', color: '#dc2626' },
-  { id: 'WSBK', label: 'WorldSBK', color: '#0284c7' },
-  { id: 'WEC', label: 'WEC Hypercar', color: '#0072ce' },
-  { id: 'WRC', label: 'WRC Rally', color: '#ff9800' },
-  { id: 'INDYCAR', label: 'IndyCar', color: '#0284c7' },
-  { id: 'SUPERCARS', label: 'Supercars V8', color: '#2563eb' },
-  { id: 'DTM', label: 'DTM GT3', color: '#e11d48' },
-  { id: 'DRIFT', label: 'Formula Drift', color: '#10b981' },
-];
-
-export const ConstructorProfile: React.FC<Props> = ({ onSelectDriver }) => {
-  const [selectedCategory, setSelectedCategory] = useState<MotorsportCategory>('F1');
+export const ConstructorProfile: React.FC<Props> = ({ 
+  onSelectDriver,
+  category: propCategory,
+  onSelectCategory
+}) => {
+  const [selectedCategory, setSelectedCategory] = useState<MotorsportCategory>(propCategory || 'F1');
   const [selectedCtorId, setSelectedCtorId] = useState<string>('');
+
+  React.useEffect(() => {
+    if (propCategory) {
+      setSelectedCategory(propCategory);
+      setSelectedCtorId('');
+    }
+  }, [propCategory]);
 
   const seasonData = useMemo(() => {
     return getCategoryStandings(selectedCategory, CURRENT_YEAR);
@@ -82,33 +83,6 @@ export const ConstructorProfile: React.FC<Props> = ({ onSelectDriver }) => {
             Technical specs, powertrain architecture, car models, and driver pairings across all 9 disciplines
           </p>
         </div>
-      </div>
-
-      {/* Category Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-        {CATEGORY_CHIPS.map((chip) => {
-          const isSelected = selectedCategory === chip.id;
-          return (
-            <button
-              key={chip.id}
-              onClick={() => {
-                setSelectedCategory(chip.id);
-                setSelectedCtorId('');
-              }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
-                isSelected
-                  ? 'bg-gradient-to-r from-[#e8002d]/20 to-white/10 border-[#ff1744] text-white shadow-lg shadow-[#ff1744]/10'
-                  : 'bg-[#121215] border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'
-              }`}
-            >
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: chip.color }}
-              />
-              <span>{chip.label}</span>
-            </button>
-          );
-        })}
       </div>
 
       {/* 2-Column Split: Constructor List & Team Overview */}

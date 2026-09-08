@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Trophy, Award, Zap, Flag, ArrowRightLeft, Shield, Gauge, Activity, Compass, Flame } from 'lucide-react';
-import { Driver } from '../types';
+import { Driver, MotorsportCategory } from '../types';
 import { getAllMotorsportDrivers, ALL_CATEGORY_STANDINGS } from '../data/allMotorsportStandings';
 
 const LEGENDS: Driver[] = [
@@ -74,7 +74,15 @@ const LEGENDS: Driver[] = [
   },
 ];
 
-export const DriverComparison: React.FC = () => {
+interface Props {
+  category?: MotorsportCategory;
+  onSelectCategory?: (category: MotorsportCategory) => void;
+}
+
+export const DriverComparison: React.FC<Props> = ({ 
+  category: propCategory,
+  onSelectCategory 
+}) => {
   const allDrivers = useMemo(() => {
     try {
       const motorsportDrivers = getAllMotorsportDrivers();
@@ -90,7 +98,13 @@ export const DriverComparison: React.FC = () => {
     }
   }, []);
 
-  const [filterCategory, setFilterCategory] = useState<string>('ALL');
+  const [filterCategory, setFilterCategory] = useState<string>(propCategory || 'F1');
+
+  useEffect(() => {
+    if (propCategory) {
+      setFilterCategory(propCategory);
+    }
+  }, [propCategory]);
   
   const filteredDrivers = useMemo(() => {
     if (filterCategory === 'ALL') return allDrivers;
@@ -100,39 +114,71 @@ export const DriverComparison: React.FC = () => {
   const [driverAId, setDriverAId] = useState<string>('antonelli');
   const [driverBId, setDriverBId] = useState<string>('max_verstappen');
 
+  useEffect(() => {
+    if (filteredDrivers.length >= 2) {
+      const aInList = filteredDrivers.some((d) => d.driverId === driverAId);
+      const bInList = filteredDrivers.some((d) => d.driverId === driverBId);
+      if (!aInList || !bInList) {
+        setDriverAId(filteredDrivers[0].driverId);
+        setDriverBId(filteredDrivers[1].driverId);
+      }
+    }
+  }, [filteredDrivers]);
+
   // Fallback safe resolution
   const driverA = useMemo(() => {
-    return allDrivers.find((d) => d.driverId === driverAId) || allDrivers[0] || LEGENDS[0];
-  }, [allDrivers, driverAId]);
+    return (
+      filteredDrivers.find((d) => d.driverId === driverAId) ||
+      filteredDrivers[0] ||
+      allDrivers.find((d) => d.driverId === driverAId) ||
+      allDrivers[0] ||
+      LEGENDS[0]
+    );
+  }, [filteredDrivers, allDrivers, driverAId]);
 
   const driverB = useMemo(() => {
-    return allDrivers.find((d) => d.driverId === driverBId) || allDrivers[1] || LEGENDS[1];
-  }, [allDrivers, driverBId]);
+    return (
+      filteredDrivers.find((d) => d.driverId === driverBId && d.driverId !== driverA.driverId) ||
+      filteredDrivers.find((d) => d.driverId === driverBId) ||
+      filteredDrivers[1] ||
+      filteredDrivers[0] ||
+      allDrivers.find((d) => d.driverId === driverBId) ||
+      allDrivers[1] ||
+      LEGENDS[1]
+    );
+  }, [filteredDrivers, allDrivers, driverBId, driverA.driverId]);
 
-  // Compute stats safely for both drivers
+  // Compute stats safely for both drivers across all categories
   const getDriverStats = (driver: Driver) => {
     let seasonPoints = 0;
     let seasonWins = 0;
-    let seasonPodiums = 0;
     let position = 0;
 
-    // Search across 2026/2025 standings
-    const f1_2026 = ALL_CATEGORY_STANDINGS.F1?.[2026]?.driverStandings || [];
-    const f1_2025 = ALL_CATEGORY_STANDINGS.F1?.[2025]?.driverStandings || [];
+    const targetCat = (driver.category || filterCategory) as MotorsportCategory;
+    const catData = ALL_CATEGORY_STANDINGS[targetCat]?.[2026] || ALL_CATEGORY_STANDINGS[targetCat]?.[2025];
     
-    const standing2026 = f1_2026.find((s) => s.driver.driverId === driver.driverId);
-    const standing2025 = f1_2025.find((s) => s.driver.driverId === driver.driverId);
-    
-    const activeStanding = standing2026 || standing2025;
-
-    if (activeStanding) {
-      seasonPoints = activeStanding.points || 0;
-      seasonWins = activeStanding.wins || 0;
-      position = activeStanding.position || 0;
+    if (catData) {
+      const standing = catData.driverStandings.find((s) => s.driver.driverId === driver.driverId);
+      if (standing) {
+        seasonPoints = standing.points || 0;
+        seasonWins = standing.wins || 0;
+        position = standing.position || 0;
+      }
+    } else {
+      for (const catKey of Object.keys(ALL_CATEGORY_STANDINGS) as MotorsportCategory[]) {
+        const data = ALL_CATEGORY_STANDINGS[catKey]?.[2026] || ALL_CATEGORY_STANDINGS[catKey]?.[2025];
+        const standing = data?.driverStandings?.find((s) => s.driver.driverId === driver.driverId);
+        if (standing) {
+          seasonPoints = standing.points || 0;
+          seasonWins = standing.wins || 0;
+          position = standing.position || 0;
+          break;
+        }
+      }
     }
 
     const careerTitles = driver.championships ?? 0;
-    const careerPodiums = driver.podiums ?? (driver.careerWins ? driver.careerWins * 2 : seasonPodiums || (seasonWins * 2));
+    const careerPodiums = driver.podiums ?? (driver.careerWins ? driver.careerWins * 2 : (seasonWins * 2));
     const careerWins = driver.careerWins ?? seasonWins;
 
     return {
@@ -141,7 +187,7 @@ export const DriverComparison: React.FC = () => {
       careerWins,
       seasonPoints,
       seasonWins,
-      position: position > 0 ? `#${position}` : 'N/A',
+      position: position > 0 ? `#${position}` : '—',
     };
   };
 
@@ -250,27 +296,26 @@ export const DriverComparison: React.FC = () => {
               Head-to-Head Driver & Champion Telemetry
             </h2>
             <p className="text-sm text-slate-400">
-              Benchmark active and legendary drivers across speed, consistency, and honors
+              Benchmark drivers across telemetry, speed, consistency, and honors
             </p>
           </div>
 
-          {/* Discipline Filter */}
-          <div className="flex items-center gap-2 bg-[#18181b] border border-white/10 rounded-xl px-3 py-2">
-            <Compass className="w-4 h-4 text-slate-400" />
-            <span className="text-xs font-semibold text-slate-400 uppercase">Category:</span>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer"
-            >
-              <option value="ALL" className="bg-[#18181b]">All Categories & Legends</option>
-              <option value="F1" className="bg-[#18181b]">Formula 1</option>
-              <option value="WEC" className="bg-[#18181b]">WEC Hypercar</option>
-              <option value="WRC" className="bg-[#18181b]">WRC Rally</option>
-              <option value="MotoGP" className="bg-[#18181b]">MotoGP</option>
-              <option value="FormulaDrift" className="bg-[#18181b]">Formula Drift</option>
-              <option value="DTM" className="bg-[#18181b]">DTM</option>
-            </select>
+          {/* Discipline Switcher */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-[#18181b] p-1.5 rounded-xl border border-white/10">
+            {(['ALL', 'F1', 'GTWORLD', 'MOTOGP', 'WSBK', 'WEC', 'WRC', 'INDYCAR', 'SUPERCARS', 'DTM', 'DRIFT'] as const).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setFilterCategory(cat)}
+                className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg transition-all ${
+                  filterCategory === cat
+                    ? 'bg-[#e8002d] text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {cat === 'GTWORLD' ? 'GT WORLD' : cat}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -278,32 +323,40 @@ export const DriverComparison: React.FC = () => {
       {/* Selectors Bar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Driver A Selector */}
-        <div className="bg-[#121215] border border-white/10 rounded-xl p-4 flex items-center justify-between gap-3 shadow-lg">
-          <span className="text-xs font-mono font-bold text-[#ff1744] uppercase shrink-0">Driver 1:</span>
+        <div className="bg-[#121215] border border-[#ff1744]/30 rounded-xl p-4 flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-2 py-0.5 rounded bg-[#ff1744]/20 border border-[#ff1744]/40 text-[#ff4d6d] text-xs font-mono font-black uppercase">
+              Driver 1
+            </span>
+          </div>
           <select
             value={driverA.driverId}
             onChange={(e) => setDriverAId(e.target.value)}
-            className="flex-1 bg-[#18181b] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-[#ff1744] cursor-pointer"
+            className="flex-1 bg-[#18181b] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-[#ff1744] cursor-pointer truncate"
           >
             {filteredDrivers.map((d) => (
-              <option key={d.driverId} value={d.driverId} className="bg-[#18181b]">
-                {d.fullName} ({d.nationality}) • {d.constructorName || d.category || 'Motorsport'}
+              <option key={`a-${d.category || 'all'}-${d.driverId}`} value={d.driverId} className="bg-[#18181b]">
+                {d.permanentNumber || d.driverNumber ? `#${d.permanentNumber || d.driverNumber} ` : ''}{d.fullName} ({d.nationality}) — {d.constructorName || d.category || 'Motorsport'}
               </option>
             ))}
           </select>
         </div>
 
         {/* Driver B Selector */}
-        <div className="bg-[#121215] border border-white/10 rounded-xl p-4 flex items-center justify-between gap-3 shadow-lg">
-          <span className="text-xs font-mono font-bold text-cyan-400 uppercase shrink-0">Driver 2:</span>
+        <div className="bg-[#121215] border border-cyan-500/30 rounded-xl p-4 flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-mono font-black uppercase">
+              Driver 2
+            </span>
+          </div>
           <select
             value={driverB.driverId}
             onChange={(e) => setDriverBId(e.target.value)}
-            className="flex-1 bg-[#18181b] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-cyan-400 cursor-pointer"
+            className="flex-1 bg-[#18181b] text-white font-bold text-sm py-2 px-3 rounded-lg border border-white/10 focus:outline-none focus:border-cyan-400 cursor-pointer truncate"
           >
             {filteredDrivers.map((d) => (
-              <option key={d.driverId} value={d.driverId} className="bg-[#18181b]">
-                {d.fullName} ({d.nationality}) • {d.constructorName || d.category || 'Motorsport'}
+              <option key={`b-${d.category || 'all'}-${d.driverId}`} value={d.driverId} className="bg-[#18181b]">
+                {d.permanentNumber || d.driverNumber ? `#${d.permanentNumber || d.driverNumber} ` : ''}{d.fullName} ({d.nationality}) — {d.constructorName || d.category || 'Motorsport'}
               </option>
             ))}
           </select>
@@ -313,11 +366,22 @@ export const DriverComparison: React.FC = () => {
       {/* Driver Face-Off Profile Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Driver A Card */}
-        <div className="relative bg-[#121215] border border-white/10 rounded-2xl p-6 overflow-hidden shadow-xl">
+        <div className="relative bg-[#121215] border border-[#ff1744]/20 rounded-2xl p-6 overflow-hidden shadow-xl">
           <div
             className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
             style={{ backgroundColor: driverA.teamColor || '#e8002d' }}
           />
+
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <span className="px-2.5 py-1 rounded bg-[#ff1744]/20 border border-[#ff1744]/50 text-[#ff4d6d] text-xs font-mono font-black tracking-wider uppercase">
+              DRIVER 1
+            </span>
+            {driverA.category && (
+              <span className="text-xs font-mono text-slate-400 uppercase bg-white/5 px-2 py-0.5 rounded">
+                {driverA.category === 'GTWORLD' ? 'GT WORLD' : driverA.category}
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-4 relative z-10">
             <div 
@@ -333,11 +397,6 @@ export const DriverComparison: React.FC = () => {
                   #{driverA.permanentNumber || driverA.driverNumber || '—'}
                 </span>
                 <span className="text-xs text-slate-400 font-medium">{driverA.nationality}</span>
-                {driverA.category && (
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
-                    {driverA.category}
-                  </span>
-                )}
               </div>
               <h3 className="text-2xl font-black text-white mt-1 tracking-tight">{driverA.fullName}</h3>
               <p className="text-xs text-slate-400 mt-0.5">{driverA.constructorName || 'Professional Racing Driver'}</p>
@@ -352,11 +411,22 @@ export const DriverComparison: React.FC = () => {
         </div>
 
         {/* Driver B Card */}
-        <div className="relative bg-[#121215] border border-white/10 rounded-2xl p-6 overflow-hidden shadow-xl">
+        <div className="relative bg-[#121215] border border-cyan-500/20 rounded-2xl p-6 overflow-hidden shadow-xl">
           <div
             className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
             style={{ backgroundColor: driverB.teamColor || '#27f4d2' }}
           />
+
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <span className="px-2.5 py-1 rounded bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 text-xs font-mono font-black tracking-wider uppercase">
+              DRIVER 2
+            </span>
+            {driverB.category && (
+              <span className="text-xs font-mono text-slate-400 uppercase bg-white/5 px-2 py-0.5 rounded">
+                {driverB.category === 'GTWORLD' ? 'GT WORLD' : driverB.category}
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-4 relative z-10">
             <div 
@@ -372,11 +442,6 @@ export const DriverComparison: React.FC = () => {
                   #{driverB.permanentNumber || driverB.driverNumber || '—'}
                 </span>
                 <span className="text-xs text-slate-400 font-medium">{driverB.nationality}</span>
-                {driverB.category && (
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
-                    {driverB.category}
-                  </span>
-                )}
               </div>
               <h3 className="text-2xl font-black text-white mt-1 tracking-tight">{driverB.fullName}</h3>
               <p className="text-xs text-slate-400 mt-0.5">{driverB.constructorName || 'Professional Racing Driver'}</p>

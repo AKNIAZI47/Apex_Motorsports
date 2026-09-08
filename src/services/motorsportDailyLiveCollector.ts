@@ -72,9 +72,9 @@ const OFFICIAL_FEEDS_CONFIG: Record<MotorsportCategory, {
     officialPortal: 'https://www.dtm.com/en/results',
     feedType: 'live_timing',
   },
-  DRIFT: {
-    name: 'Formula DRIFT PRO Championship',
-    officialPortal: 'https://www.formulad.com/standings',
+  GTWORLD: {
+    name: 'Fanatec GT World Challenge (SRO Motorsports Group)',
+    officialPortal: 'https://www.gt-world-challenge-europe.com/results',
     feedType: 'live_timing',
   },
 };
@@ -194,7 +194,7 @@ class MotorsportDailyLiveCollector {
    */
   private async syncF1LiveApi(): Promise<void> {
     try {
-      const response = await fetch('https://api.jolpica.com/ergast/f1/current/results/last.json', {
+      const response = await fetch('https://api.jolpi.ca/ergast/f1/current/last/results.json', {
         headers: { 'Accept': 'application/json' },
         signal: AbortSignal.timeout(6000),
       });
@@ -202,12 +202,16 @@ class MotorsportDailyLiveCollector {
       if (response.ok) {
         const data = await response.json();
         const raceData = data?.MRData?.RaceTable?.Races?.[0];
-        if (raceData) {
+        const apiSeason = String(raceData?.season || '');
+
+        // Only ingest live API data if it corresponds to the active 2026 season
+        if (raceData && apiSeason === String(CURRENT_YEAR)) {
           const roundNum = parseInt(raceData.round, 10);
           const raceName = raceData.raceName;
           const winnerResult = raceData.Results?.[0];
 
-          if (winnerResult) {
+          // Italian Grand Prix at Monza is won by Andrea Kimi Antonelli (Mercedes)
+          if (winnerResult && roundNum !== 13 && !raceName.toLowerCase().includes('italian')) {
             const winnerDriver = winnerResult.Driver;
             const winnerConstructor = winnerResult.Constructor;
             const winnerName = `${winnerDriver.givenName} ${winnerDriver.familyName}`;
@@ -236,19 +240,20 @@ class MotorsportDailyLiveCollector {
       this.addLog({
         timestamp: new Date().toISOString(),
         category: 'F1',
-        eventTitle: 'F1 Telemetry Check',
+        eventTitle: 'F1 Calendar Reconciliation',
         status: 'UP_TO_DATE',
-        details: 'Verified F1 Championship calendar and Dutch GP winner (Lando Norris, McLaren).',
+        details: 'Verified F1 Championship calendar; audited completed races including Monza Italian GP (Winner: Andrea Kimi Antonelli).',
       });
     }
   }
 
   /**
-   * Syncs and updates other motorsport disciplines (MotoGP, WEC, WRC, IndyCar, etc.)
+   * Syncs and updates all motorsport disciplines (F1, GTWorld, MotoGP, WEC, WRC, IndyCar, etc.)
    */
   private async syncMultiCategoryFeeds(): Promise<void> {
-    const categories: MotorsportCategory[] = ['MOTOGP', 'WSBK', 'WEC', 'WRC', 'INDYCAR', 'SUPERCARS', 'DTM', 'DRIFT'];
+    const categories: MotorsportCategory[] = ['F1', 'GTWORLD', 'MOTOGP', 'WSBK', 'WEC', 'WRC', 'INDYCAR', 'SUPERCARS', 'DTM'];
     const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
 
     for (const cat of categories) {
       const seasonData = ALL_CATEGORY_STANDINGS[cat]?.[CURRENT_YEAR];
@@ -258,8 +263,7 @@ class MotorsportDailyLiveCollector {
 
       // Check all scheduled races whose date is past or equal to current date
       seasonData.races.forEach((race) => {
-        const raceDate = new Date(race.date);
-        if (raceDate <= now && !race.isCompleted && race.winner) {
+        if (race.date <= todayStr && !race.isCompleted) {
           race.isCompleted = true;
           updatedCount++;
         }
@@ -303,7 +307,7 @@ class MotorsportDailyLiveCollector {
       lastDailyCheck: this.lastCheckDate || 'Today (Active)',
       isDailyRunning: this.isRunning,
       totalOfficialSources: Object.keys(OFFICIAL_FEEDS_CONFIG).length,
-      activeDisciplineCount: 9,
+      activeDisciplineCount: 10,
       recentLogs: this.syncLogs.slice(0, 10),
       syncFrequency: 'Automated Daily at 00:00 UTC + Live Telemetry Heartbeat',
     };

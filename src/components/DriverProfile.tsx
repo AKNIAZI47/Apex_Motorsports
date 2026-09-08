@@ -2,49 +2,50 @@ import React, { useState, useMemo } from 'react';
 import { 
   Trophy, 
   Award, 
-  Calendar, 
-  Flag, 
-  User, 
-  Sparkles, 
-  Zap, 
-  Shield, 
-  ChevronRight, 
   Search, 
   Gauge, 
-  Compass, 
-  Flame,
-  Activity
+  Flame, 
+  Shield, 
+  Car,
+  Flag,
+  User
 } from 'lucide-react';
 import { Driver, MotorsportCategory } from '../types';
 import { getAllMotorsportDrivers, getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
+import { getDriverMedia } from '../data/driverMedia';
 
 interface Props {
   initialDriver?: Driver | null;
+  category?: MotorsportCategory;
+  onSelectCategory?: (category: MotorsportCategory) => void;
 }
 
-const CATEGORY_CHIPS: { id: MotorsportCategory | 'ALL'; label: string; color: string }[] = [
-  { id: 'ALL', label: 'All Competitors', color: '#ffffff' },
-  { id: 'F1', label: 'Formula 1', color: '#e8002d' },
-  { id: 'MOTOGP', label: 'MotoGP', color: '#dc2626' },
-  { id: 'WSBK', label: 'WorldSBK', color: '#0284c7' },
-  { id: 'WEC', label: 'WEC / 24H', color: '#0072ce' },
-  { id: 'WRC', label: 'WRC Rally', color: '#ff9800' },
-  { id: 'INDYCAR', label: 'IndyCar', color: '#0284c7' },
-  { id: 'SUPERCARS', label: 'Supercars V8', color: '#2563eb' },
-  { id: 'DTM', label: 'DTM GT3', color: '#e11d48' },
-  { id: 'DRIFT', label: 'Formula Drift', color: '#10b981' },
-];
-
-export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
-  const allDrivers = useMemo(() => getAllMotorsportDrivers(), []);
+export const DriverProfile: React.FC<Props> = ({ 
+  initialDriver,
+  category: propCategory,
+  onSelectCategory
+}) => {
+  const allDrivers = useMemo(() => {
+    return getAllMotorsportDrivers().filter((d) => d.category !== 'DRIFT');
+  }, []);
+  
   const [selectedCategory, setSelectedCategory] = useState<MotorsportCategory | 'ALL'>(
-    initialDriver?.category || 'ALL'
+    (propCategory === 'DRIFT' ? 'GTWORLD' : propCategory) || initialDriver?.category || 'F1'
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDriverId, setSelectedDriverId] = useState<string>(
     initialDriver?.driverId || ''
   );
+
+  React.useEffect(() => {
+    if (propCategory === 'DRIFT') {
+      setSelectedCategory('GTWORLD');
+      onSelectCategory?.('GTWORLD');
+    } else if (propCategory) {
+      setSelectedCategory(propCategory);
+    }
+  }, [propCategory, onSelectCategory]);
 
   const filteredDrivers = useMemo(() => {
     return allDrivers.filter((d) => {
@@ -77,84 +78,48 @@ export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
   const catMeta = MOTORSPORT_CATEGORIES[driverCat];
   const teamColor = selectedDriver?.teamColor || catMeta?.badgeColor || '#e8002d';
 
+  // Get media (portrait and ride image)
+  const media = useMemo(() => {
+    if (!selectedDriver) return null;
+    return getDriverMedia(selectedDriver, driverCat);
+  }, [selectedDriver, driverCat]);
+
   if (!selectedDriver) {
     return (
-      <div className="p-12 text-center text-slate-400">
-        No motorsport competitor profile loaded.
+      <div className="p-12 text-center text-slate-400 font-mono text-sm">
+        No driver profile loaded.
       </div>
     );
   }
 
+  const isMotorcycle = driverCat === 'MOTOGP' || driverCat === 'WSBK';
+
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-[#121215] border border-white/10 rounded-2xl shadow-xl relative overflow-hidden">
-        <div 
-          className="absolute -right-20 -top-20 w-80 h-80 rounded-full blur-3xl opacity-10 pointer-events-none"
-          style={{ backgroundColor: teamColor }}
-        />
-
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#ff1744] tracking-widest uppercase">
-            <User className="w-3.5 h-3.5" />
-            <span>Universal Driver Dossier & 2026 World Championship Statistics</span>
-          </div>
-          <h1 className="text-3xl font-black text-white uppercase tracking-tight mt-1">
-            Motorsport Competitor Intelligence
-          </h1>
-          <p className="text-sm text-slate-400">
-            Official 2026 racing profiles across F1, MotoGP, WSBK, WEC, WRC, IndyCar, Supercars, DTM & Formula Drift
-          </p>
-        </div>
-
-        {/* Search Input */}
-        <div className="relative w-full md:w-72 z-10">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search driver, team, country..."
-            className="w-full bg-[#18181b] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#ff1744] transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Category Filter Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-        {CATEGORY_CHIPS.map((chip) => {
-          const isSelected = selectedCategory === chip.id;
-          return (
-            <button
-              key={chip.id}
-              onClick={() => setSelectedCategory(chip.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
-                isSelected
-                  ? 'bg-gradient-to-r from-[#e8002d]/20 to-white/10 border-[#ff1744] text-white shadow-lg shadow-[#ff1744]/10'
-                  : 'bg-[#121215] border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'
-              }`}
-            >
-              {chip.id !== 'ALL' && (
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: chip.color }}
-                />
-              )}
-              <span>{chip.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Main 2-Column Split: List on Left, Profile on Right */}
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Main 2-Column Split: Driver List on Left, Profile Detail on Right */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Driver List (Left 4 columns) */}
-        <div className="md:col-span-4 bg-[#121215] border border-white/10 rounded-2xl overflow-hidden flex flex-col max-h-[760px] shadow-xl">
-          <div className="p-3.5 bg-[#18181b] border-b border-white/10 flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-            <span>Drivers Roster</span>
-            <span className="font-mono text-emerald-400 font-bold">{filteredDrivers.length} Competitors</span>
+        <div className="md:col-span-4 bg-[#121215] border border-white/10 rounded-2xl overflow-hidden flex flex-col max-h-[820px] shadow-xl">
+          {/* Header with Integrated Search */}
+          <div className="p-3.5 bg-[#18181b] border-b border-white/10 space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span>{catMeta?.name || 'Championship'} Drivers</span>
+              <span className="font-mono text-emerald-400 font-bold">{filteredDrivers.length} Competitors</span>
+            </div>
+
+            <div className="relative w-full">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search driver, team, country..."
+                className="w-full bg-[#121215] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#ff1744] transition-colors"
+              />
+            </div>
           </div>
 
+          {/* Scrollable Drivers List */}
           <div className="overflow-y-auto divide-y divide-white/5 flex-1">
             {filteredDrivers.map((d) => {
               const isSelected = d.driverId === selectedDriver.driverId;
@@ -172,7 +137,7 @@ export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-2 h-8 rounded-full"
+                      className="w-2 h-9 rounded-full"
                       style={{ backgroundColor: d.teamColor || catInfo?.badgeColor || '#888' }}
                     />
                     <div>
@@ -191,18 +156,14 @@ export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
                   </div>
 
                   <div className="text-right">
-                    <span 
-                      className="inline-block text-[10px] font-bold font-mono px-2 py-0.5 rounded uppercase"
-                      style={{ 
-                        backgroundColor: `${catInfo?.badgeColor || '#e8002d'}22`,
-                        color: catInfo?.badgeColor || '#ff4d6d'
-                      }}
-                    >
-                      {d.category || 'F1'}
-                    </span>
-                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                    <div className="text-xs text-slate-300 font-mono font-bold">
                       {d.nationality}
                     </div>
+                    {d.code && (
+                      <div className="text-[10px] text-slate-500 font-mono">
+                        {d.code}
+                      </div>
+                    )}
                   </div>
                 </button>
               );
@@ -212,7 +173,7 @@ export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
 
         {/* Driver Detail Pane (Right 8 columns) */}
         <div className="md:col-span-8 space-y-6">
-          {/* Hero Card */}
+          {/* Driver Overview Card */}
           <div className="relative bg-[#121215] border border-white/10 rounded-2xl p-6 sm:p-8 overflow-hidden shadow-2xl">
             <div
               className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-10 pointer-events-none -mr-20 -mt-20"
@@ -220,17 +181,17 @@ export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
             />
 
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
-              {/* Photo / Badge */}
+              {/* Photo */}
               <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
                 <div
                   className="absolute inset-0 rounded-2xl blur-md opacity-20"
                   style={{ backgroundColor: teamColor }}
                 />
-                {selectedDriver.headshotUrl ? (
+                {media?.headshotUrl ? (
                   <img
-                    src={selectedDriver.headshotUrl}
+                    src={media.headshotUrl}
                     alt={selectedDriver.fullName}
-                    className="w-full h-full object-contain relative z-10 drop-shadow-xl"
+                    className="w-full h-full object-contain relative z-10 drop-shadow-xl rounded-xl"
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = 'none';
@@ -245,34 +206,30 @@ export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
                       {selectedDriver.code || selectedDriver.familyName?.substring(0, 3)?.toUpperCase() || 'DRV'}
                     </span>
                     <span className="text-[10px] tracking-widest text-slate-400 mt-1 uppercase font-sans">
-                      {selectedDriver.category || 'PRO'}
+                      #{selectedDriver.permanentNumber || '00'}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Title & Info */}
+              {/* Driver Details & Bio */}
               <div className="flex-1 text-center sm:text-left space-y-2">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <span 
-                    className="px-2.5 py-0.5 rounded text-xs font-black tracking-widest uppercase font-mono"
-                    style={{ 
-                      backgroundColor: `${catMeta?.badgeColor || '#e8002d'}22`,
-                      color: catMeta?.badgeColor || '#ff4d6d'
-                    }}
-                  >
-                    {selectedDriver.category || 'F1'} Championship
-                  </span>
-
                   {selectedDriver.permanentNumber && (
-                    <span className="px-2 py-0.5 rounded bg-white/10 text-white font-mono text-xs font-bold">
+                    <span className="px-2.5 py-0.5 rounded bg-white/10 text-white font-mono text-xs font-bold">
                       Car #{selectedDriver.permanentNumber}
                     </span>
                   )}
 
-                  <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300 text-xs">
+                  <span className="px-2.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300 text-xs font-medium">
                     {selectedDriver.nationality}
                   </span>
+
+                  {selectedDriver.dateOfBirth && (
+                    <span className="px-2 py-0.5 rounded bg-white/5 text-slate-400 text-xs font-mono">
+                      DOB: {selectedDriver.dateOfBirth}
+                    </span>
+                  )}
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
@@ -341,25 +298,57 @@ export const DriverProfile: React.FC<Props> = ({ initialDriver }) => {
             </div>
           </div>
 
-          {/* Technical Specifications & Vehicle Machinery Card */}
-          <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <Gauge className="w-4 h-4 text-[#ff1744]" />
-              <span>2026 Machine & Power Unit Architecture</span>
+          {/* Professional Car Details Card (with Vehicle Photo) */}
+          <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <Car className="w-4 h-4 text-[#ff1744]" />
+                <span>{isMotorcycle ? 'Motorcycle Details' : 'Car Details'}</span>
+              </div>
+              <span className="text-xs font-mono text-slate-400">
+                {selectedDriver.constructorName}
+              </span>
             </div>
 
+            {/* Vehicle Machinery Image Banner */}
+            {media?.rideImageUrl && (
+              <div className="relative w-full h-48 sm:h-56 rounded-xl overflow-hidden bg-black/40 border border-white/10 shadow-inner">
+                <img
+                  src={media.rideImageUrl}
+                  alt={currentStanding?.constructors[0]?.carModel || `${selectedDriver.constructorName} Machine`}
+                  className="w-full h-full object-cover opacity-90 hover:scale-102 transition-transform duration-500"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#121215] via-transparent to-black/30" />
+                
+                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                  <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
+                    <div className="text-[10px] font-mono uppercase text-slate-400">Official Machinery</div>
+                    <div className="text-sm font-bold text-white">
+                      {currentStanding?.constructors[0]?.carModel || media.rideModel}
+                    </div>
+                  </div>
+
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-black/70 text-slate-300 border border-white/10 backdrop-blur-md">
+                    {media.tyrePartner}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Technical Specifications Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-[#18181b] p-4 rounded-xl border border-white/5">
                 <div className="text-xs text-slate-400 font-medium">Chassis / Model</div>
                 <div className="text-sm font-bold text-white mt-1">
-                  {currentStanding?.constructors[0]?.carModel || `${selectedDriver.constructorName} Spec-2026`}
+                  {currentStanding?.constructors[0]?.carModel || `${selectedDriver.constructorName} Competition Spec`}
                 </div>
               </div>
 
               <div className="bg-[#18181b] p-4 rounded-xl border border-white/5">
-                <div className="text-xs text-slate-400 font-medium">Power Unit / Engine</div>
+                <div className="text-xs text-slate-400 font-medium">Engine / Power Unit</div>
                 <div className="text-sm font-bold text-emerald-400 mt-1 font-mono">
-                  {currentStanding?.constructors[0]?.powerUnit || 'High Performance Racing Engine'}
+                  {currentStanding?.constructors[0]?.powerUnit || media?.rideEngine || 'Racing Engine Spec'}
                 </div>
               </div>
             </div>

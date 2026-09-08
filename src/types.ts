@@ -7,7 +7,8 @@ export type MotorsportCategory =
   | 'MOTOGP' 
   | 'WSBK' 
   | 'INDYCAR' 
-  | 'SUPERCARS';
+  | 'SUPERCARS'
+  | 'GTWORLD';
 
 export interface MotorsportCategoryInfo {
   id: MotorsportCategory;
@@ -57,6 +58,8 @@ export interface Driver {
   careerWins?: number;
   championships?: number;
   category?: MotorsportCategory;
+  racingClass?: string; // 'GT3' | 'GT4' | 'Pro' | 'Silver' | 'Pro-Am' | 'Am'
+  driverRating?: 'Platinum' | 'Gold' | 'Silver' | 'Bronze' | string;
 }
 
 export interface Constructor {
@@ -72,6 +75,7 @@ export interface Constructor {
   headquarters?: string;
   carModel?: string;
   category?: MotorsportCategory;
+  racingClass?: string;
 }
 
 export interface Race {
@@ -135,6 +139,8 @@ export interface DriverStanding {
   wins: number;
   driver: Driver;
   constructors: Constructor[];
+  racingClass?: string;
+  driverRating?: string;
 }
 
 export interface ConstructorStanding {
@@ -232,10 +238,11 @@ export interface NewsArticle {
   id: string;
   title: string;
   summary: string;
+  body?: string;
   publishedAt: string;
   source: string;
   url: string;
-  category: 'TECH' | 'RACE' | 'FIA' | 'TRANSFERS' | 'INTERVIEW' | 'ENDURANCE' | 'DRIFT' | 'RALLY' | 'BIKES';
+  category: 'TECH' | 'RACE' | 'FIA' | 'TRANSFERS' | 'INTERVIEW' | 'ENDURANCE' | 'DRIFT' | 'RALLY' | 'BIKES' | string;
   discipline: MotorsportCategory;
   imageUrl?: string;
 }

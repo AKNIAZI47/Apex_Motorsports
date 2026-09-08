@@ -266,38 +266,6 @@ export const CircuitMapReplay: React.FC<Props> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* 9 Category Quick-Switcher Bar */}
-      <div className="p-3 glass-panel-elevated rounded-2xl border border-white/10 shadow-xl flex flex-col gap-2">
-        {/* 9 Distinct Category Buttons */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1.5">
-          {(Object.keys(DISCIPLINE_TELEMETRY) as MotorsportCategory[]).map((catKey) => {
-            const config = DISCIPLINE_TELEMETRY[catKey];
-            const isSelected = selectedCategory === catKey;
-            const categoryMeta = MOTORSPORT_CATEGORIES[catKey];
-
-            return (
-              <button
-                key={catKey}
-                onClick={() => handleCategorySwitch(catKey)}
-                className={`py-2 px-2 rounded-xl text-center font-mono font-bold text-xs transition-all border cursor-pointer ${
-                  isSelected
-                    ? 'bg-gradient-to-b from-[#ff1744]/25 to-white/10 border-[#ff1744] text-white shadow-lg shadow-[#ff1744]/30 scale-102 ring-1 ring-[#ff1744]'
-                    : 'glass-card text-slate-400 hover:text-white hover:border-white/25'
-                }`}
-              >
-                <div className="flex items-center justify-center gap-1.5">
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: categoryMeta?.badgeColor || '#ff1744' }}
-                  />
-                  <span className="truncate">{config.shortCode}</span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Main Header & Circuit Selector */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 glass-panel-elevated border border-white/10 rounded-2xl shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#ff1744]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />

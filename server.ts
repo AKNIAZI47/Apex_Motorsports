@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
+import { unifiedSyncEngine } from "./server/unifiedSyncEngine";
 
 const app = express();
 const PORT = 3000;
@@ -17,6 +18,20 @@ app.use((req, res, next) => {
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Unified Nightly Sync Engine (Runs daily at 00:00:00 midnight)
+app.get("/api/sync/status", (req, res) => {
+  res.json(unifiedSyncEngine.getStatus());
+});
+
+app.post("/api/sync/run-nightly", async (req, res) => {
+  try {
+    const result = await unifiedSyncEngine.runCombinedSync("USER_TRIGGERED_NIGHTLY_AUDIT");
+    res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: "Sync execution failed", details: e?.message });
+  }
 });
 
 // 5-Minute In-Memory Cache for Express
@@ -250,14 +265,14 @@ app.get("/api/motorsports/categories", async (req, res) => {
         leader: { name: "Ferrari AF Corse 499P #50", points: 152 },
       },
       {
-        id: "DRIFT",
-        name: "Formula DRIFT Pro Championship",
-        shortCode: "FORMULA DRIFT",
-        powerOutput: "1,000 – 1,250+ Wheel HP with Nitrous",
-        topSpeed: "175 km/h entry speed with 75° angle slide",
-        flagshipEvent: "Irwindale Speedway (House of Drift)",
-        governingBody: "Formula Drift Holdings",
-        leader: { name: "James Deane (Mustang RTR)", points: 620 },
+        id: "GTWORLD",
+        name: "Fanatec GT World Challenge Powered by AWS",
+        shortCode: "GT WORLD",
+        powerOutput: "550 – 600 BHP (GT3 & GT4 Homologation)",
+        topSpeed: "305 km/h",
+        flagshipEvent: "CrowdStrike 24 Hours of Spa & Nürburgring",
+        governingBody: "SRO Motorsports Group",
+        leader: { name: "Dries Vanthoor & Charles Weerts (Team WRT)", points: 118.5 },
       },
       {
         id: "WRC",

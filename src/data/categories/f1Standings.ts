@@ -1181,8 +1181,14 @@ export const F1_STANDINGS: Record<number, CategorySeasonData> = {
         country: 'Italy',
         date: '2026-09-06',
         time: '13:00:00Z',
-        isCompleted: false,
+        isCompleted: true,
         totalLaps: 53,
+        winner: {
+          driverId: 'antonelli',
+          fullName: 'Andrea Kimi Antonelli',
+          constructorName: 'Mercedes-AMG PETRONAS F1 Team',
+          time: '1:14:40.727',
+        },
       },
       {
         season: 2026,

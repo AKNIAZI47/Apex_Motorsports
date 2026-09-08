@@ -13,23 +13,32 @@ import { getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandin
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
 import { motorsportDailyLiveCollector } from '../services/motorsportDailyLiveCollector';
 
-const CATEGORIES_LIST: { id: MotorsportCategory; name: string; short: string; color: string }[] = [
-  { id: 'F1', name: 'FIA Formula One', short: 'F1', color: '#e8002d' },
-  { id: 'MOTOGP', name: 'MotoGP World Championship', short: 'MotoGP', color: '#dc2626' },
-  { id: 'WSBK', name: 'FIM Superbike World Championship', short: 'WorldSBK', color: '#0284c7' },
-  { id: 'WEC', name: 'FIA World Endurance (Hypercar)', short: 'WEC / 24H', color: '#0072ce' },
-  { id: 'WRC', name: 'FIA World Rally Championship', short: 'WRC', color: '#ff9800' },
-  { id: 'INDYCAR', name: 'NTT IndyCar Series', short: 'IndyCar', color: '#0284c7' },
-  { id: 'SUPERCARS', name: 'Repco Supercars Championship', short: 'Supercars V8', color: '#2563eb' },
-  { id: 'DTM', name: 'Deutsche Tourenwagen Masters', short: 'DTM GT3', color: '#e11d48' },
-  { id: 'DRIFT', name: 'Formula DRIFT PRO Championship', short: 'Formula Drift', color: '#10b981' },
-];
+interface SeasonDashboardProps {
+  category?: MotorsportCategory;
+  onSelectCategory?: (category: MotorsportCategory) => void;
+}
 
-export const SeasonDashboard: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<MotorsportCategory>('F1');
+export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({ 
+  category: propCategory, 
+  onSelectCategory 
+}) => {
+  const [selectedCategory, setSelectedCategory] = useState<MotorsportCategory>(propCategory || 'F1');
   const [activeTab, setActiveTab] = useState<'calendar' | 'drivers' | 'constructors'>('calendar');
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [updateTick, setUpdateTick] = useState(0);
+
+  useEffect(() => {
+    if (propCategory) {
+      setSelectedCategory(propCategory);
+    }
+  }, [propCategory]);
+
+  const handleCategorySelect = (catId: MotorsportCategory) => {
+    setSelectedCategory(catId);
+    if (onSelectCategory) {
+      onSelectCategory(catId);
+    }
+  };
 
   // Subscribe to automated daily live sync updates
   useEffect(() => {
@@ -56,32 +65,6 @@ export const SeasonDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Category Discipline Selector Bar */}
-      <div className="bg-[#121215]/90 backdrop-blur-md border border-white/10 rounded-2xl p-2.5 shadow-xl">
-        <div className="flex items-center flex-wrap gap-2">
-          {CATEGORIES_LIST.map((cat) => {
-            const isSelected = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'bg-[#e8002d]/15 border-[#ff1744] text-white shadow-md shadow-[#ff1744]/15'
-                    : 'bg-white/[0.03] border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]'
-                }`}
-              >
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: cat.color }}
-                />
-                <span>{cat.short}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Top Controls & Banner */}
       <div className="rounded-2xl border border-white/10 overflow-hidden bg-[#121215] p-6 shadow-2xl relative">
         <div 
