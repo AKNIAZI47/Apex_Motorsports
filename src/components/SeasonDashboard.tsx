@@ -59,6 +59,25 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
   const activeCategoryInfo = MOTORSPORT_CATEGORIES[selectedCategory];
   const { races, driverStandings, constructorStandings, metrics } = seasonData;
 
+  // Strict descending points mathematical invariant enforcement
+  const sortedDriverStandings = useMemo(() => {
+    const list = [...driverStandings].sort((a, b) => b.points - a.points);
+    return list.map((st, idx) => ({
+      ...st,
+      position: idx + 1,
+      positionText: String(idx + 1),
+    }));
+  }, [driverStandings]);
+
+  const sortedConstructorStandings = useMemo(() => {
+    const list = [...constructorStandings].sort((a, b) => b.points - a.points);
+    return list.map((st, idx) => ({
+      ...st,
+      position: idx + 1,
+      positionText: String(idx + 1),
+    }));
+  }, [constructorStandings]);
+
   const nextUpcomingRace = useMemo(() => {
     return races.find((r) => !r.isCompleted) || races[0];
   }, [races]);
@@ -74,17 +93,6 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span 
-                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold tracking-widest text-white uppercase"
-                style={{ backgroundColor: activeCategoryInfo?.badgeColor || '#e8002d' }}
-              >
-                {activeCategoryInfo?.governingBody || 'FIA'} {selectedCategory}
-              </span>
-              <span className="text-xs text-slate-400">
-                {activeCategoryInfo?.name || 'World Championship'}
-              </span>
-            </div>
             <h1 className="text-3xl font-black text-white tracking-tight uppercase">
               {CURRENT_YEAR} {activeCategoryInfo?.name || selectedCategory} Standings
             </h1>
@@ -102,10 +110,10 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
               <span>Championship Leader</span>
             </div>
             <div className="text-base font-bold text-white truncate">
-              {metrics?.championDriver || driverStandings[0]?.driver.fullName || 'Pending'}
+              {sortedDriverStandings[0]?.driver.fullName || metrics?.championDriver || 'Pending'}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              {driverStandings[0]?.points ? `${driverStandings[0].points} PTS • ${driverStandings[0].wins} Wins` : 'Active 2026'}
+              {sortedDriverStandings[0]?.points ? `${sortedDriverStandings[0].points} PTS • ${sortedDriverStandings[0].wins} Wins` : 'Active 2026'}
             </div>
           </div>
 
@@ -115,10 +123,10 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
               <span>Leading Manufacturer</span>
             </div>
             <div className="text-base font-bold text-white truncate">
-              {metrics?.championConstructor || constructorStandings[0]?.constructor.name || 'Pending'}
+              {sortedConstructorStandings[0]?.constructor.name || metrics?.championConstructor || 'Pending'}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              {constructorStandings[0]?.points ? `${constructorStandings[0].points} PTS • ${constructorStandings[0].wins} Wins` : 'Active 2026'}
+              {sortedConstructorStandings[0]?.points ? `${sortedConstructorStandings[0].points} PTS • ${sortedConstructorStandings[0].wins} Wins` : 'Active 2026'}
             </div>
           </div>
 
@@ -130,8 +138,16 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
             <div className="text-base font-bold text-white">
               {races.filter((r) => r.isCompleted).length} / {races.length} Completed
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
-              Next: {races.find((r) => !r.isCompleted)?.raceName || 'Season Completed'}
+            <div className="text-[11px] text-slate-400 mt-0.5 font-mono truncate">
+              {(() => {
+                const next = races.find((r) => !r.isCompleted);
+                if (next) {
+                  return `Next: Round ${next.round} • ${next.raceName}`;
+                }
+                const completed = races.filter((r) => r.isCompleted).length;
+                const total = Math.max(races.length, metrics?.totalRaces || 0);
+                return completed >= total && total > 0 ? 'Season Completed' : 'Rounds in Progress';
+              })()}
             </div>
           </div>
         </div>
@@ -268,7 +284,7 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {driverStandings.map((ds) => {
+                {sortedDriverStandings.map((ds) => {
                   const isTop3 = ds.position <= 3;
                   const ctor = ds.constructors?.[0];
 
@@ -359,7 +375,7 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {constructorStandings.map((cs) => (
+                {sortedConstructorStandings.map((cs) => (
                   <tr
                     key={cs.constructor.constructorId}
                     className="hover:bg-white/[0.04] transition-colors font-medium"

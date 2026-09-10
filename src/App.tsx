@@ -7,8 +7,7 @@ import {
   User, 
   Shield, 
   ArrowRightLeft,
-  ChevronLeft,
-  Clock
+  ChevronLeft
 } from 'lucide-react';
 import { CircuitMapReplay } from './components/CircuitMapReplay';
 import { NewsPanel } from './components/NewsPanel';
@@ -19,7 +18,6 @@ import { ConstructorProfile } from './components/ConstructorProfile';
 import { DriverComparison } from './components/DriverComparison';
 import { DomainsPortal } from './components/DomainsPortal';
 import { ApexMotorsportsLogo } from './components/ApexMotorsportsLogo';
-import { NightlySyncStatusModal } from './components/NightlySyncStatusModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Driver, MotorsportCategory } from './types';
 import { MOTORSPORT_CATEGORIES } from './data/motorsportCategories';
@@ -35,20 +33,18 @@ export type TabType =
   | 'news';
 
 export function App() {
-  // Initial state: starts on the Domains Portal (null domain selected)
   const [selectedDiscipline, setSelectedDiscipline] = useState<MotorsportCategory | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('domains');
   const [targetCircuitId, setTargetCircuitId] = useState<string | undefined>(undefined);
   const [inspectedDriver, setInspectedDriver] = useState<Driver | null>(null);
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
-  // When user selects a domain from the portal
+  // When user selects a category
   const handleSelectDomain = (category: MotorsportCategory) => {
     setSelectedDiscipline(category);
     setActiveTab('dashboard');
   };
 
-  // Return to all domains portal
+  // Return to all categories
   const handleReturnToDomains = () => {
     setSelectedDiscipline(null);
     setActiveTab('domains');
@@ -87,7 +83,7 @@ export function App() {
             <div 
               onClick={handleReturnToDomains}
               className="cursor-pointer group flex items-center"
-              title="Return to Championship Domains"
+              title="Apex Motorsports"
             >
               <ApexMotorsportsLogo size="md" showText={true} />
             </div>
@@ -99,37 +95,14 @@ export function App() {
                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-mono font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-all cursor-pointer shadow-sm"
                 >
                   <ChevronLeft className="w-4 h-4 text-[#ff4d6d]" />
-                  <span>Back</span>
+                  <span>All Series</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Right Header - Daily 00:00 Nightly Sync Indicator & Active Domain */}
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => setIsSyncModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/20 hover:bg-emerald-900/30 text-xs font-mono text-emerald-300 transition-all cursor-pointer shadow-sm group"
-              title="Automated Combined Sync (Runs Daily at 00:00:00 across all 9 domains)"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-bold">Nightly Sync 00:00</span>
-              <span className="hidden md:inline text-[10px] text-emerald-400/70 border-l border-emerald-500/30 pl-2">
-                9/9 Feeds Live
-              </span>
-            </button>
-
-            {selectedDiscipline && currentCategoryMeta && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs font-mono font-bold">
-                <span
-                  className="w-2 h-2 rounded-full shrink-0 animate-pulse"
-                  style={{ backgroundColor: currentCategoryMeta.badgeColor }}
-                />
-                <span className="text-white hidden sm:inline">{currentCategoryMeta.name}</span>
-                <span className="text-white sm:hidden">{currentCategoryMeta.shortCode}</span>
-              </div>
-            )}
-          </div>
+          {/* Right Header - Clean empty container */}
+          <div className="flex items-center gap-2.5" />
         </div>
 
         {/* Tab Navigation Bar (Shown when inside a domain, or when viewing news) */}
@@ -259,26 +232,20 @@ export function App() {
               onClick={handleReturnToDomains} 
               className="text-slate-400 hover:text-white underline cursor-pointer"
             >
-              Championship Domains
+              All Categories
             </button>
             <span>•</span>
             <button 
               onClick={() => setActiveTab('news')} 
               className="text-slate-400 hover:text-white underline cursor-pointer"
             >
-              Universal Newsroom
+              Motorsport News
             </button>
             <span>•</span>
-            <span className="text-slate-500">2026 World Championship Precision Telemetry</span>
+            <span className="text-slate-500">World Championship Motorsport Telemetry & Standings</span>
           </div>
         </div>
       </footer>
-
-      {/* Combined Multi-Domain Nightly Sync Modal */}
-      <NightlySyncStatusModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-      />
     </div>
   );
 }

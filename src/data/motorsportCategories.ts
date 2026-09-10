@@ -24,12 +24,12 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     championshipLeader: {
       name: 'Andrea Kimi Antonelli',
       team: 'Mercedes-AMG PETRONAS F1 Team',
-      points: 318,
+      points: 267,
       vehicle: 'Mercedes-AMG F1 W17',
     },
     constructorLeader: {
       name: 'Mercedes-AMG PETRONAS F1 Team',
-      points: 612,
+      points: 460,
     },
     keyRegulations: [
       'Advanced hybrid power unit with 350kW electrical boost & 100% sustainable fuels',
@@ -54,14 +54,14 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     powerOutput: '670 - 700 BHP (500 kW Max Cap + 200kW Front Hybrid)',
     topSpeed: '345 km/h (214 mph on Mulsanne Straight)',
     championshipLeader: {
-      name: 'Antonio Fuoco / Miguel Molina / Nicklas Nielsen',
-      team: 'Ferrari AF Corse',
+      name: 'Kévin Estre / André Lotterer / Laurens Vanthoor',
+      team: 'Porsche Penske Motorsport #6',
       points: 152,
-      vehicle: 'Ferrari 499P Hybrid Hypercar',
+      vehicle: 'Porsche 963 LMDh',
     },
     constructorLeader: {
-      name: 'Toyota Gazoo Racing (GR010 Hybrid)',
-      points: 190,
+      name: 'Porsche Penske Motorsport',
+      points: 192,
     },
     keyRegulations: [
       'Balance of Performance (BoP) strictly monitors power curve and minimum weight',
@@ -86,13 +86,13 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     powerOutput: '500+ BHP in Hybrid Boost Mode (380 BHP ICE + 134 BHP EV)',
     topSpeed: '205 km/h (127 mph on blind gravel forest trails)',
     championshipLeader: {
-      name: 'Thierry Neuville / Martijn Wydaeghe',
-      team: 'Hyundai Shell Mobis WRT',
-      points: 242,
-      vehicle: 'Hyundai i20 N Rally1 Hybrid',
+      name: 'Elfyn Evans / Scott Martin',
+      team: 'Toyota Gazoo Racing WRT',
+      points: 198,
+      vehicle: 'Toyota GR Yaris Rally1 Hybrid',
     },
     constructorLeader: {
-      name: 'Toyota Gazoo Racing WRT (GR Yaris Rally1)',
+      name: 'Toyota Gazoo Racing WRT',
       points: 561,
     },
     keyRegulations: [
@@ -152,12 +152,12 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     championshipLeader: {
       name: 'Mirko Bortolotti',
       team: 'SSR Performance (Lamborghini)',
-      points: 238,
+      points: 198,
       vehicle: 'Lamborghini Huracán GT3 EVO2',
     },
     constructorLeader: {
-      name: 'Porsche Motorsport / Manthey EMA',
-      points: 395,
+      name: 'Schubert Motorsport (BMW M Team)',
+      points: 357,
     },
     keyRegulations: [
       'Single-driver sprint format: 55-minute races + 1 lap with mandatory pit stops',
@@ -214,14 +214,14 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     powerOutput: '240 – 250+ BHP',
     topSpeed: '335 km/h (208 mph)',
     championshipLeader: {
-      name: 'Toprak Razgatlıoğlu',
-      team: 'ROKiT BMW Motorrad WorldSBK Team',
-      points: 527,
-      vehicle: 'BMW M1000RR',
+      name: 'Nicolò Bulega',
+      team: 'Aruba.it Racing – Ducati',
+      points: 418,
+      vehicle: 'Ducati Panigale V4 R',
     },
     constructorLeader: {
-      name: 'BMW Motorrad Motorsport',
-      points: 606,
+      name: 'Ducati',
+      points: 540,
     },
     keyRegulations: [
       'Strict homologation rules: chassis and engine crankcases based on road showroom superbikes',
@@ -247,13 +247,13 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     topSpeed: '380 km/h (236 mph at Indianapolis Motor Speedway)',
     championshipLeader: {
       name: 'Alex Palou',
-      team: 'Chip Ganassi Racing',
-      points: 544,
+      team: 'Chip Ganassi Racing #10',
+      points: 485,
       vehicle: 'Dallara Honda IR18 (Aeroscreen)',
     },
     constructorLeader: {
-      name: 'Chip Ganassi Racing / Honda Performance Development',
-      points: 710,
+      name: 'Chip Ganassi Racing',
+      points: 615,
     },
     keyRegulations: [
       'Spec Dallara IR-18 carbon-composite chassis with ballistic titanium Aeroscreen cockpit protection',
@@ -279,13 +279,13 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     topSpeed: '300 km/h (186 mph down Conrod Straight)',
     championshipLeader: {
       name: 'Will Brown',
-      team: 'Triple Eight Race Engineering (Red Bull Ampol)',
-      points: 3060,
+      team: 'Red Bull Ampol Racing (Triple Eight)',
+      points: 2240,
       vehicle: 'Chevrolet Camaro ZL1 Gen3',
     },
     constructorLeader: {
-      name: 'Triple Eight Race Engineering',
-      points: 5890,
+      name: 'Red Bull Ampol Racing (Triple Eight)',
+      points: 4390,
     },
     keyRegulations: [
       'Gen3 chassis with control roll cages and body panels mimicking production showroom coupes',

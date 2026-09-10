@@ -116,12 +116,6 @@ export const MotorsportsHub: React.FC<Props> = ({ onLaunchTelemetry, onViewF1Das
 
               {/* Badges on Image */}
               <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                <span
-                  className="px-3 py-1 rounded-full text-xs font-mono font-black text-white shadow-lg backdrop-blur-md"
-                  style={{ backgroundColor: selectedInfo.badgeColor }}
-                >
-                  {selectedInfo.governingBody} OFFICIAL
-                </span>
                 <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-black/70 text-slate-200 backdrop-blur-md border border-white/15">
                   {selectedInfo.flagshipEvent}
                 </span>

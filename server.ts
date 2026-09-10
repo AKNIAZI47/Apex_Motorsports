@@ -262,7 +262,7 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "345 km/h (Circuit de la Sarthe)",
         flagshipEvent: "24 Hours of Le Mans & 24h Nürburgring",
         governingBody: "FIA / ACO",
-        leader: { name: "Ferrari AF Corse 499P #50", points: 152 },
+        leader: { name: "Kévin Estre / André Lotterer / Laurens Vanthoor (Porsche Penske #6)", points: 152 },
       },
       {
         id: "GTWORLD",
@@ -272,7 +272,7 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "305 km/h",
         flagshipEvent: "CrowdStrike 24 Hours of Spa & Nürburgring",
         governingBody: "SRO Motorsports Group",
-        leader: { name: "Dries Vanthoor & Charles Weerts (Team WRT)", points: 118.5 },
+        leader: { name: "Dries Vanthoor & Charles Weerts (Team WRT)", points: 148 },
       },
       {
         id: "WRC",
@@ -282,7 +282,7 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "205 km/h on blind forest trails",
         flagshipEvent: "Rallye Monte-Carlo & Rally Finland",
         governingBody: "FIA",
-        leader: wrcLeader,
+        leader: { name: "Elfyn Evans / Scott Martin (Toyota Gazoo Racing WRT)", points: 198 },
       },
       {
         id: "MOTOGP",
@@ -292,7 +292,7 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "366.1 km/h (Jorge Martín / Mugello)",
         flagshipEvent: "Mugello GP & Dutch TT Assen",
         governingBody: "FIM / Dorna",
-        leader: { name: "Jorge Martín (Aprilia Racing)", points: 508 },
+        leader: { name: "Jorge Martín (Aprilia Racing)", points: 256 },
       },
       {
         id: "WSBK",
@@ -302,7 +302,7 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "335 km/h (208 mph)",
         flagshipEvent: "Imola Round & Donington Park",
         governingBody: "FIM",
-        leader: { name: "Toprak Razgatlıoğlu (BMW M1000RR)", points: 527 },
+        leader: { name: "Nicolò Bulega (Aruba.it Racing - Ducati)", points: 418 },
       },
       {
         id: "DTM",
@@ -312,7 +312,7 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "295 km/h",
         flagshipEvent: "Norisring Speedweekend & Nürburgring Sprint",
         governingBody: "ADAC Motorsport",
-        leader: { name: "Mirko Bortolotti (Lamborghini)", points: 238 },
+        leader: { name: "Mirko Bortolotti (SSR Performance)", points: 198 },
       },
       {
         id: "SUPERCARS",
@@ -322,7 +322,7 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "300 km/h down Conrod Straight",
         flagshipEvent: "Bathurst 1000 (Mount Panorama)",
         governingBody: "Supercars Australia",
-        leader: { name: "Will Brown (Camaro Gen3)", points: 3060 },
+        leader: { name: "Will Brown (Triple Eight / Red Bull Ampol)", points: 2240 },
       },
       {
         id: "INDYCAR",
@@ -332,20 +332,20 @@ app.get("/api/motorsports/categories", async (req, res) => {
         topSpeed: "380 km/h (236 mph at Indianapolis Motor Speedway)",
         flagshipEvent: "The Indianapolis 500",
         governingBody: "INDYCAR LLC",
-        leader: indycarLeader,
+        leader: { name: "Alex Palou (Chip Ganassi Racing #10)", points: 485 },
       },
     ],
   });
 });
 
-// Auto-Sync Status Endpoint
-app.get("/api/sync/status", (req, res) => {
-  res.json({
-    last_sync: new Date().toISOString(),
-    cached_races: nodeCache.size,
-    last_round: "1",
-    status: "idle",
-  });
+// Official Live Multi-Series Sync Execution
+app.post("/api/sync/run-official-sync", async (req, res) => {
+  try {
+    const result = await unifiedSyncEngine.runCombinedSync("USER_TRIGGERED_OFFICIAL_SYNC");
+    res.json({ success: true, result });
+  } catch (e: any) {
+    res.status(500).json({ error: "Sync execution failed", details: e?.message });
+  }
 });
 
 import fs from "fs";

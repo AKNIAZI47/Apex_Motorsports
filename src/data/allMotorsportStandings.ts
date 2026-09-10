@@ -34,76 +34,18 @@ export const ALL_CATEGORY_STANDINGS: Record<MotorsportCategory, Record<number, C
   DRIFT: DRIFT_STANDINGS,
 };
 
-/**
- * Automatically audits calendar races and reconciles completed status & points for any race that has passed
- */
-function autoReconcileCompletedRaces(seasonData: CategorySeasonData) {
-  if (!seasonData || !seasonData.races) return;
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-
-  let hasChanges = false;
-
-  seasonData.races.forEach((race) => {
-    // If race date has arrived or passed (e.g. Italian Grand Prix at Monza on 2026-09-06 when today is 2026-09-08)
-    if (race.date <= todayStr && !race.isCompleted) {
-      race.isCompleted = true;
-      hasChanges = true;
-
-      // Assign authentic race classification if winner is not yet stamped
-      if (!race.winner && seasonData.driverStandings.length > 0) {
-        // Look for winner: for Italian Grand Prix at Monza, Andrea Kimi Antonelli (Mercedes) won
-        const isMonza = race.circuitId === 'monza' || race.raceName.toLowerCase().includes('italian');
-        const winnerEntry = isMonza
-          ? (seasonData.driverStandings.find(d => d.driver.driverId === 'antonelli' || d.driver.familyName.toLowerCase().includes('antonelli')) || seasonData.driverStandings[0])
-          : seasonData.driverStandings[0];
-
-        race.winner = {
-          driverId: winnerEntry.driver.driverId,
-          fullName: winnerEntry.driver.fullName,
-          constructorName: winnerEntry.driver.constructorName || winnerEntry.constructors[0]?.name || 'Factory Racing',
-          time: '1:14:40.727',
-        };
-
-        // Award official 25 points for victory
-        winnerEntry.wins = (winnerEntry.wins || 0) + 1;
-        winnerEntry.points = (winnerEntry.points || 0) + 25;
-        if (winnerEntry.driver) {
-          winnerEntry.driver.podiums = (winnerEntry.driver.podiums || 0) + 1;
-          winnerEntry.driver.careerWins = (winnerEntry.driver.careerWins || 0) + 1;
-        }
-
-        // Award 25 constructor points
-        const constructorId = winnerEntry.constructors[0]?.constructorId;
-        const constructorName = winnerEntry.driver.constructorName || winnerEntry.constructors[0]?.name;
-        const ctorEntry = seasonData.constructorStandings.find(
-          c => (constructorId && c.constructor.constructorId === constructorId) ||
-               (constructorName && c.constructor.name === constructorName)
-        );
-        if (ctorEntry) {
-          ctorEntry.points = (ctorEntry.points || 0) + 25;
-          ctorEntry.wins = (ctorEntry.wins || 0) + 1;
-        }
-      }
-    }
-  });
-
-  if (hasChanges) {
-    // Recalculate completed races count
-    seasonData.metrics.completedRaces = seasonData.races.filter(r => r.isCompleted).length;
-
-    // Keep standings accurately sorted by points
-    seasonData.driverStandings.sort((a, b) => b.points - a.points);
-    seasonData.driverStandings.forEach((st, idx) => {
-      st.position = idx + 1;
-      st.positionText = String(idx + 1);
+// Purge any corrupted legacy cache from previous turns
+if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    localStorage.removeItem('gridscope_standings_MOTOGP_2026');
+    localStorage.removeItem('gridscope_motorsport_standings_cache_v2');
+    localStorage.removeItem('gridscope_motorsport_daily_sync_v2');
+    const legacyCats = ['F1', 'MOTOGP', 'WSBK', 'WEC', 'WRC', 'INDYCAR', 'SUPERCARS', 'DTM', 'GTWORLD', 'DRIFT'];
+    legacyCats.forEach((c) => {
+      localStorage.removeItem(`gridscope_official_standings_v5_${c}_2026`);
     });
-
-    seasonData.constructorStandings.sort((a, b) => b.points - a.points);
-    seasonData.constructorStandings.forEach((ct, idx) => {
-      ct.position = idx + 1;
-      ct.positionText = String(idx + 1);
-    });
+  } catch {
+    // ignore
   }
 }
 
@@ -111,6 +53,28 @@ function autoReconcileCompletedRaces(seasonData: CategorySeasonData) {
  * Universal Data Fetcher for active championship motorsport category standings
  */
 export function getCategoryStandings(category: MotorsportCategory, year: number = CURRENT_YEAR): CategorySeasonData {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const key = `gridscope_official_standings_v6_${category}_${year}`;
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.driverStandings) && parsed.driverStandings.length > 1) {
+          // Mathematical sanity: position 1 must have >= points than position 2
+          const p1 = parsed.driverStandings[0]?.points || 0;
+          const p2 = parsed.driverStandings[1]?.points || 0;
+          if (p1 >= p2) {
+            return parsed;
+          } else {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   const catData = ALL_CATEGORY_STANDINGS[category];
   let result: CategorySeasonData;
 
@@ -124,8 +88,14 @@ export function getCategoryStandings(category: MotorsportCategory, year: number 
     result = ALL_CATEGORY_STANDINGS.F1[CURRENT_YEAR];
   }
 
-  // Automatically reconcile any past race that took place
-  autoReconcileCompletedRaces(result);
+  // Ensure strict descending points invariant and sequential positions
+  if (result && Array.isArray(result.driverStandings)) {
+    result.driverStandings.sort((a, b) => b.points - a.points);
+    result.driverStandings.forEach((st, idx) => {
+      st.position = idx + 1;
+      st.positionText = String(idx + 1);
+    });
+  }
 
   return result;
 }
