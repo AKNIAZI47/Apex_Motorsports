@@ -60,6 +60,14 @@ h1, h2, h3 {
   background: var(--surface);
 }
 
+.series-visual {
+  background-color: #1a222b;
+  background-image:
+    linear-gradient(135deg, color-mix(in srgb, var(--series-color) 26%, transparent), transparent 55%),
+    repeating-linear-gradient(125deg, transparent 0 18px, rgba(255, 255, 255, 0.035) 18px 19px);
+  border-bottom: 1px solid color-mix(in srgb, var(--series-color) 45%, var(--line));
+}
+
 /* Ultra-refined minimal scrollbar */
 ::-webkit-scrollbar {
   width: 4px;

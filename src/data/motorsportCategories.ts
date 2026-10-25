@@ -1,13 +1,4 @@
 import { MotorsportCategory, MotorsportCategoryInfo } from '../types';
-import f1Img from '../assets/images/f1_race_car_1788850884206.jpg';
-import motogpImg from '../assets/images/motogp_race_bike_1788850931100.jpg';
-import wecImg from '../assets/images/wec_hypercar_1788850954631.jpg';
-import wsbkImg from '../assets/images/wsbk_superbike_1788850993985.jpg';
-import wrcImg from '../assets/images/wrc_rally_car_1788850973744.jpg';
-import indycarImg from '../assets/images/indycar_race_car_1788851016993.jpg';
-import supercarsImg from '../assets/images/supercars_v8_car_1788851039075.jpg';
-import dtmImg from '../assets/images/dtm_gt3_car_1788851060359.jpg';
-import driftImg from '../assets/images/drift_car_smoke_1788850905989.jpg';
 
 export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategoryInfo> = {
   F1: {
@@ -40,7 +31,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Monaco', 'Silverstone', 'Spa-Francorchamps', 'Monza', 'Suzuka', 'Interlagos'],
     description: 'Formula 1 represents the absolute cutting edge of automotive engineering, high-g aerodynamic downforce, and global driver rivalries spanning 75 glorious seasons.',
-    imageUrl: f1Img,
+    imageUrl: '',
   },
   WEC: {
     id: 'WEC',
@@ -72,7 +63,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Circuit de la Sarthe (Le Mans 24h)', 'Nürburgring Nordschleife 24h', 'Spa-Francorchamps 6h', 'Sebring 12h', 'Fuji Speedway'],
     description: 'Multi-class endurance racing testing hybrid hypercars and GT machinery over 6, 8, 12, and 24 grueling hours across day, twilight, midnight, and dawn.',
-    imageUrl: wecImg,
+    imageUrl: '',
   },
   WRC: {
     id: 'WRC',
@@ -104,7 +95,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Col de Turini (Monte Carlo)', 'Ouninpohja Stage (Finland)', 'Safari Rally Kenya', 'Acropolis Rally Greece', 'Rally Sweden'],
     description: 'The most visceral motorsport on the planet, where drivers drift 500-horsepower hybrid prototypes inches from trees, cliffs, and snow banks at 200 km/h.',
-    imageUrl: wrcImg,
+    imageUrl: '',
   },
   DRIFT: {
     id: 'DRIFT',
@@ -136,7 +127,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Irwindale Speedway (House of Drift)', 'Streets of Long Beach', 'Road Atlanta (Horseshoe)', 'Englishtown Raceway', 'Ebisu Circuit Minami'],
     description: 'The world premier professional sliding discipline where 1,200hp tire-shredding drift beasts battle door-to-door at 100+ mph wall proximity with massive smoke volume.',
-    imageUrl: driftImg,
+    imageUrl: '',
   },
   DTM: {
     id: 'DTM',
@@ -168,7 +159,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Norisring Street Circuit', 'Nürburgring GP Strecke', 'Hockenheimring', 'Red Bull Ring Spielberg', 'Zandvoort'],
     description: 'Fierce sprint GT3 racing pitting elite factory drivers and European automotive giants against each other in high-contact, single-driver shootouts.',
-    imageUrl: dtmImg,
+    imageUrl: '',
   },
   MOTOGP: {
     id: 'MOTOGP',
@@ -200,7 +191,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Autodromo del Mugello', 'TT Circuit Assen', 'Circuito de Jerez', 'Phillip Island GP Circuit', 'Silverstone'],
     description: 'The pinnacle of two-wheel motorsport, where riders drop shoulders, elbows, and knees to the tarmac at 65-degree lean angles and 360 km/h top speeds.',
-    imageUrl: motogpImg,
+    imageUrl: '',
   },
   WSBK: {
     id: 'WSBK',
@@ -232,7 +223,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Autodromo Enzo e Dino Ferrari (Imola)', 'Donington Park', 'Circuito San Juan Villicum', 'Phillip Island', 'MotorLand Aragón'],
     description: 'Production superbike battles featuring aggressive late-braking stoppies, handlebar-to-handlebar overtakes, and 3-race weekend marathons.',
-    imageUrl: wsbkImg,
+    imageUrl: '',
   },
   INDYCAR: {
     id: 'INDYCAR',
@@ -264,7 +255,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Indianapolis Motor Speedway (Indy 500)', 'Road America', 'Long Beach Grand Prix', 'Laguna Seca (Corkscrew)', 'Mid-Ohio'],
     description: 'America premier open-wheel racing series renowned for raw 235+ mph four-wide draft battles at the Indy 500 and pure mechanical driver grit.',
-    imageUrl: indycarImg,
+    imageUrl: '',
   },
   SUPERCARS: {
     id: 'SUPERCARS',
@@ -296,7 +287,7 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Mount Panorama Circuit (Bathurst)', 'Surfers Paradise (Gold Coast 500)', 'Albert Park Melbourne', 'Hidden Valley Darwin', 'Adelaide Street Circuit'],
     description: 'Australia legendary heavy V8 touring cars sliding sideways over blind crests and down the legendary 300 km/h Conrod Straight at Bathurst.',
-    imageUrl: supercarsImg,
+    imageUrl: '',
   },
   GTWORLD: {
     id: 'GTWORLD',
@@ -328,6 +319,6 @@ export const MOTORSPORT_CATEGORIES: Record<MotorsportCategory, MotorsportCategor
     ],
     signatureCircuits: ['Circuit de Spa-Francorchamps (24 Hours of Spa)', 'Circuit Paul Ricard (1000km)', 'Brands Hatch GP', 'Misano World Circuit', 'Nürburgring GP', 'Circuit de Barcelona-Catalunya'],
     description: 'The world benchmark for customer and factory GT3 & GT4 racing, featuring fierce battles between BMW, Ferrari, Porsche, Mercedes-AMG, Aston Martin, Audi, Lamborghini, and McLaren.',
-    imageUrl: dtmImg,
+    imageUrl: '',
   },
 };

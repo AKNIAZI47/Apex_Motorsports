@@ -105,14 +105,15 @@ export const MotorsportsHub: React.FC<Props> = ({ onLaunchTelemetry, onViewF1Das
         <div className="lg:col-span-7 space-y-6">
           {/* Main Visual Card */}
           <div className="glass-panel-elevated rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative group">
-            <div className="relative h-72 sm:h-84 w-full overflow-hidden bg-black/80">
-              <img
-                src={selectedInfo.imageUrl}
-                alt={selectedInfo.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#04040a] via-[#04040a]/60 to-transparent" />
+            <div
+              className="series-visual relative h-72 sm:h-84 w-full overflow-hidden"
+              style={{ '--series-color': selectedInfo.badgeColor } as React.CSSProperties}
+            >
+              <div className="absolute inset-0 flex flex-col justify-end p-6">
+                <span className="text-xs font-mono font-bold tracking-[0.24em] text-white/65 uppercase">
+                  {selectedInfo.governingBody}
+                </span>
+              </div>
 
               {/* Badges on Image */}
               <div className="absolute top-4 left-4 flex flex-wrap gap-2">

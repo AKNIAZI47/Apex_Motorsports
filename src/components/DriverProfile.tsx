@@ -187,29 +187,17 @@ export const DriverProfile: React.FC<Props> = ({
                   className="absolute inset-0 rounded-2xl blur-md opacity-20"
                   style={{ backgroundColor: teamColor }}
                 />
-                {media?.headshotUrl ? (
-                  <img
-                    src={media.headshotUrl}
-                    alt={selectedDriver.fullName}
-                    className="w-full h-full object-contain relative z-10 drop-shadow-xl rounded-xl"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div
-                    className="w-32 h-32 rounded-2xl flex flex-col items-center justify-center font-mono font-black border-2 border-white/10 text-white shadow-2xl relative z-10"
-                    style={{ backgroundColor: `${teamColor}33`, borderColor: teamColor }}
-                  >
-                    <span className="text-3xl">
-                      {selectedDriver.code || selectedDriver.familyName?.substring(0, 3)?.toUpperCase() || 'DRV'}
-                    </span>
-                    <span className="text-[10px] tracking-widest text-slate-400 mt-1 uppercase font-sans">
-                      #{selectedDriver.permanentNumber || '00'}
-                    </span>
-                  </div>
-                )}
+                <div
+                  className="w-32 h-32 rounded-2xl flex flex-col items-center justify-center font-mono font-black border-2 border-white/10 text-white shadow-2xl relative z-10"
+                  style={{ backgroundColor: `${teamColor}33`, borderColor: teamColor }}
+                >
+                  <span className="text-3xl">
+                    {selectedDriver.code || selectedDriver.familyName?.substring(0, 3)?.toUpperCase() || 'DRV'}
+                  </span>
+                  <span className="text-[10px] tracking-widest text-slate-400 mt-1 uppercase font-sans">
+                    #{selectedDriver.permanentNumber || '00'}
+                  </span>
+                </div>
               </div>
 
               {/* Driver Details & Bio */}
@@ -310,31 +298,12 @@ export const DriverProfile: React.FC<Props> = ({
               </span>
             </div>
 
-            {/* Vehicle Machinery Image Banner */}
-            {media?.rideImageUrl && (
-              <div className="relative w-full h-48 sm:h-56 rounded-xl overflow-hidden bg-black/40 border border-white/10 shadow-inner">
-                <img
-                  src={media.rideImageUrl}
-                  alt={currentStanding?.constructors[0]?.carModel || `${selectedDriver.constructorName} Machine`}
-                  className="w-full h-full object-cover opacity-90 hover:scale-102 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#121215] via-transparent to-black/30" />
-                
-                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                  <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                    <div className="text-[10px] font-mono uppercase text-slate-400">Official Machinery</div>
-                    <div className="text-sm font-bold text-white">
-                      {currentStanding?.constructors[0]?.carModel || media.rideModel}
-                    </div>
-                  </div>
-
-                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-black/70 text-slate-300 border border-white/10 backdrop-blur-md">
-                    {media.tyrePartner}
-                  </span>
-                </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="text-[10px] font-mono uppercase text-slate-400">Machinery</div>
+              <div className="text-lg font-bold text-white mt-1">
+                {currentStanding?.constructors[0]?.carModel || 'Model not supplied by the current data source'}
               </div>
-            )}
+            </div>
 
             {/* Technical Specifications Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

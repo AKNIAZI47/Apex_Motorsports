@@ -1,12 +1,3 @@
-import f1CarImg from '../assets/images/f1_race_car_1788850884206.jpg';
-import motogpBikeImg from '../assets/images/motogp_race_bike_1788850931100.jpg';
-import wecHypercarImg from '../assets/images/wec_hypercar_1788850954631.jpg';
-import wsbkBikeImg from '../assets/images/wsbk_superbike_1788850993985.jpg';
-import wrcCarImg from '../assets/images/wrc_rally_car_1788850973744.jpg';
-import indyCarImg from '../assets/images/indycar_race_car_1788851016993.jpg';
-import supercarsCarImg from '../assets/images/supercars_v8_car_1788851039075.jpg';
-import dtmCarImg from '../assets/images/dtm_gt3_car_1788851060359.jpg';
-import driftCarImg from '../assets/images/drift_car_smoke_1788850905989.jpg';
 import { Driver, MotorsportCategory } from '../types';
 
 export interface DriverMediaInfo {
@@ -21,52 +12,52 @@ export interface DriverMediaInfo {
 
 const CATEGORY_DEFAULT_RIDES: Record<MotorsportCategory, { image: string; model: string; engine: string }> = {
   F1: {
-    image: f1CarImg,
+    image: '',
     model: 'Formula 1 FIA 2026 Turbo-Hybrid',
     engine: '1.6L V6 Turbo Hybrid + 350kW MGU-K (1,020 HP)',
   },
   MOTOGP: {
-    image: motogpBikeImg,
+    image: '',
     model: 'MotoGP 1000cc Factory Prototype',
     engine: '1000cc 90° V4 / Inline-4 Desmodromic (295+ BHP, 18,500 RPM)',
   },
   WSBK: {
-    image: wsbkBikeImg,
+    image: '',
     model: 'FIM Superbike Homologated Spec',
     engine: '999cc – 1103cc Inline-4 / 90° V4 (245+ BHP)',
   },
   WEC: {
-    image: wecHypercarImg,
+    image: '',
     model: 'FIA WEC Le Mans Hypercar (LMH / LMDh)',
     engine: 'Twin-Turbo V6 / V8 Hybrid + Front Axle 200kW MGU (680 HP capped)',
   },
   WRC: {
-    image: wrcCarImg,
+    image: '',
     model: 'FIA Rally1 AWD Hybrid Spaceframe',
     engine: '1.6L Direct Injection Turbo + 100kW Compact Battery (500+ BHP boost)',
   },
   INDYCAR: {
-    image: indyCarImg,
+    image: '',
     model: 'Dallara IR-18 Safety Aeroscreen IndyCar',
     engine: '2.2L Twin-Turbocharged V6 + EMPEL Supercapacitor Hybrid (750+ BHP)',
   },
   SUPERCARS: {
-    image: supercarsCarImg,
+    image: '',
     model: 'Gen3 Touring V8 Supercar',
     engine: '5.4L – 5.7L Naturally Aspirated Quad-Cam V8 (600+ BHP)',
   },
   DTM: {
-    image: dtmCarImg,
+    image: '',
     model: 'FIA GT3 Homologation Championship Racer',
     engine: '4.0L – 5.2L Twin-Turbo V8 / Naturally Aspirated V10 (550 – 600 BHP)',
   },
   DRIFT: {
-    image: driftCarImg,
+    image: '',
     model: 'Formula DRIFT Pro Spec Competition Build',
     engine: 'RTR Spec Twin-Turbo V8 / 2JZ-GTE / VR38DETT (1,000 – 1,200 BHP on Nitrous)',
   },
   GTWORLD: {
-    image: dtmCarImg,
+    image: '',
     model: 'FIA GT3 & GT4 Homologated Competition Machine',
     engine: '3.0L Twin-Turbo I6 / 4.2L Flat-6 / 6.2L V8 / 5.2L V10 (500 – 600 BHP)',
   },
@@ -159,12 +150,8 @@ const DRIVER_HEADSHOTS: Record<string, string> = {
  */
 export function getDriverMedia(driver: Driver, category: MotorsportCategory = 'F1'): DriverMediaInfo {
   const catDefaults = CATEGORY_DEFAULT_RIDES[category] || CATEGORY_DEFAULT_RIDES.F1;
-  const key = driver.driverId.toLowerCase().replace(/[^a-z0-9_]/g, '');
-
-  const headshot = driver.headshotUrl || DRIVER_HEADSHOTS[key] || DRIVER_HEADSHOTS[driver.familyName.toLowerCase()] || '';
-
   return {
-    headshotUrl: headshot,
+    headshotUrl: '',
     rideImageUrl: catDefaults.image,
     rideModel: driver.constructorName ? `${driver.constructorName} Competition Spec` : catDefaults.model,
     rideEngine: catDefaults.engine,

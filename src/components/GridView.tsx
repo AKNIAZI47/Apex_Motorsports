@@ -122,21 +122,9 @@ export const GridView: React.FC<Props> = ({
                   {/* Driver Headshot & Name */}
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-black/40 border border-white/10 shrink-0 flex items-center justify-center">
-                      {media.headshotUrl ? (
-                        <img
-                          src={media.headshotUrl}
-                          alt={driver.fullName}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <span className="text-xs font-mono font-bold text-slate-300">
-                          {driver.code || driver.familyName?.substring(0, 3)?.toUpperCase()}
-                        </span>
-                      )}
+                      <span className="text-xs font-mono font-bold text-slate-300">
+                        {driver.code || driver.familyName?.substring(0, 3)?.toUpperCase()}
+                      </span>
                     </div>
 
                     <div className="min-w-0 flex-1">

@@ -57,15 +57,24 @@ export const DomainsPortal: React.FC<DomainsPortalProps> = ({
               onClick={() => onSelectDomain(catKey)}
               className="series-card group relative border overflow-hidden transition-all duration-300 cursor-pointer flex flex-col"
             >
-              {/* Image Banner */}
-              <div className="relative h-48 w-full overflow-hidden bg-black/60">
-                <img
-                  src={cat.imageUrl}
-                  alt={cat.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10] via-[#0b0c10]/40 to-transparent" />
+              {/* Source-neutral series header: no unverified race artwork. */}
+              <div
+                className="series-visual relative h-48 w-full overflow-hidden"
+                style={{ '--series-color': cat.badgeColor } as React.CSSProperties}
+              >
+                <div className="absolute inset-0 flex flex-col justify-between p-5">
+                  <span className="text-xs font-mono font-bold tracking-[0.24em] text-white/65 uppercase">
+                    {cat.governingBody}
+                  </span>
+                  <div>
+                    <span className="block text-5xl font-black tracking-tight text-white/90">
+                      {cat.shortCode}
+                    </span>
+                    <span className="mt-1 block max-w-[20rem] text-xs font-mono uppercase tracking-wider text-white/55">
+                      Championship data workspace
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Card Body */}
