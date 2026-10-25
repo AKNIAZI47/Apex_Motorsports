@@ -72,10 +72,6 @@ export const ConstructorProfile: React.FC<Props> = ({
         />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#ff1744] tracking-widest uppercase">
-            <Shield className="w-3.5 h-3.5" />
-            <span>2026 World Championship Constructor Technical Bureau</span>
-          </div>
           <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mt-1">
             Constructor Championship Profiles
           </h2>

@@ -130,11 +130,6 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
             <p className="text-xs text-slate-400 mt-1">
               {activeCategoryInfo?.tagline}
             </p>
-            <p className="text-[11px] text-amber-300/80 mt-2 font-mono">
-              {liveF1Standings
-                ? 'Live standings verified from the Jolpica F1 feed'
-                : seasonData.dataSource}
-            </p>
           </div>
         </div>
 
