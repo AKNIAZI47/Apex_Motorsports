@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Trophy, 
   ChevronRight 
@@ -6,6 +6,7 @@ import {
 import { MotorsportCategory } from '../types';
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
 import { getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
+import { JolpicaService } from '../services/jolpica';
 
 interface DomainsPortalProps {
   onSelectDomain: (category: MotorsportCategory) => void;
@@ -27,6 +28,25 @@ const DOMAIN_ORDER: MotorsportCategory[] = [
 export const DomainsPortal: React.FC<DomainsPortalProps> = ({
   onSelectDomain
 }) => {
+  const [liveF1Leader, setLiveF1Leader] = useState<{ name: string; team: string; points: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    JolpicaService.getCurrentF1Standings().then((snapshot) => {
+      const leader = snapshot.driverStandings[0];
+      if (!cancelled && snapshot.live && leader) {
+        setLiveF1Leader({
+          name: leader.driver.fullName,
+          team: leader.driver.constructorName || leader.constructors[0]?.name || 'Unknown team',
+          points: leader.points,
+        });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
@@ -50,6 +70,9 @@ export const DomainsPortal: React.FC<DomainsPortalProps> = ({
           const leaderName = topDriver?.driver?.fullName || cat.championshipLeader.name;
           const leaderTeam = topDriver?.driver?.constructorName || cat.championshipLeader.team;
           const leaderPoints = topDriver?.points ?? cat.championshipLeader.points;
+          const displayedLeader = catKey === 'F1' && liveF1Leader
+            ? liveF1Leader
+            : { name: leaderName, team: leaderTeam, points: leaderPoints };
 
           return (
             <div
@@ -96,13 +119,13 @@ export const DomainsPortal: React.FC<DomainsPortalProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-bold">Points Leader</div>
-                      <div className="text-xs font-black text-white truncate">{leaderName}</div>
-                      <div className="text-[10px] font-mono text-slate-400 truncate">{leaderTeam}</div>
+                      <div className="text-xs font-black text-white truncate">{displayedLeader.name}</div>
+                        <div className="text-[10px] font-mono text-slate-400 truncate">{displayedLeader.team}</div>
                     </div>
                   </div>
                   <div className="text-right shrink-0 pl-2">
                     <span className="text-sm font-black font-mono text-amber-400">
-                      {leaderPoints}
+                      {displayedLeader.points}
                     </span>
                     <span className="block text-[9px] font-mono text-slate-500 uppercase">PTS</span>
                   </div>
