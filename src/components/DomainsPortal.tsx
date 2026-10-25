@@ -93,9 +93,6 @@ export const DomainsPortal: React.FC<DomainsPortalProps> = ({
                     <span className="block text-5xl font-black tracking-tight text-white/90">
                       {cat.shortCode}
                     </span>
-                    <span className="mt-1 block max-w-[20rem] text-xs font-mono uppercase tracking-wider text-white/55">
-                      Championship data workspace
-                    </span>
                   </div>
                 </div>
               </div>
@@ -106,9 +103,6 @@ export const DomainsPortal: React.FC<DomainsPortalProps> = ({
                   <h3 className="text-xl font-black text-white uppercase tracking-tight group-hover:text-[#ff4d6d] transition-colors">
                     {cat.name}
                   </h3>
-                  <p className="mt-1 text-[10px] font-mono uppercase tracking-wider text-amber-300/70">
-                    Repository snapshot
-                  </p>
                 </div>
 
                 {/* Leader Preview (Points Leader from Official Standings) */}
