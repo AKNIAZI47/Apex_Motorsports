@@ -214,15 +214,7 @@ class MotorsportDailyLiveCollector {
           const roundNum = parseInt(raceData.round, 10);
           const raceName = raceData.raceName;
           const winnerResult = raceData.Results?.[0];
-          // Protect verified race results: Monza (R13 Antonelli), Madrid (R14 Antonelli), Azerbaijan (R15 Russell)
-          const protectedRounds = new Set([13, 14, 15]);
-          const isProtected = protectedRounds.has(roundNum) ||
-            raceName.toLowerCase().includes('italian') ||
-            raceName.toLowerCase().includes('madrid') ||
-            raceName.toLowerCase().includes('azerbaijan') ||
-            raceName.toLowerCase().includes('baku');
-
-          if (winnerResult && !isProtected) {
+          if (winnerResult) {
             const winnerDriver = winnerResult.Driver;
             const winnerConstructor = winnerResult.Constructor;
             const winnerName = `${winnerDriver.givenName} ${winnerDriver.familyName}`;
@@ -263,8 +255,6 @@ class MotorsportDailyLiveCollector {
    */
   private async syncMultiCategoryFeeds(): Promise<void> {
     const categories: MotorsportCategory[] = ['F1', 'GTWORLD', 'MOTOGP', 'WSBK', 'WEC', 'WRC', 'INDYCAR', 'SUPERCARS', 'DTM'];
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
 
     for (const cat of categories) {
       const seasonData = ALL_CATEGORY_STANDINGS[cat]?.[CURRENT_YEAR];
@@ -272,13 +262,8 @@ class MotorsportDailyLiveCollector {
 
       let updatedCount = 0;
 
-      // Check all scheduled races whose date is past or equal to current date
-      seasonData.races.forEach((race) => {
-        if (race.date <= todayStr && !race.isCompleted) {
-          race.isCompleted = true;
-          updatedCount++;
-        }
-      });
+      // A scheduled date is not proof of a classified result. Only an official
+      // result ingestion path may change isCompleted or attach a winner.
 
       // Strict mathematical sorting
       if (Array.isArray(seasonData.driverStandings)) {

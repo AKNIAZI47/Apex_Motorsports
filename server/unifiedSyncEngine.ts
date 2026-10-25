@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { fetchStructuredSeriesSnapshot, StructuredSeriesId } from './structuredSeriesAdapters';
 
 export interface OfficialSeriesFeed {
   id: string;
@@ -249,8 +250,8 @@ export class UnifiedSyncEngine {
       this.addLog({
         timestamp: nowIso,
         domain: 'ALL_DOMAINS',
-        status: 'SUCCESS',
-        details: `Combined nightly sync completed successfully across all 9 domains (${trigger}). Official data validated.`,
+        status: 'AUDITED',
+        details: `Source audit completed across all 9 domains (${trigger}). Only feeds with parsed structured results update standings.`,
       });
     } catch (err: any) {
       console.error('[UnifiedSyncEngine] Error during combined sync:', err);
@@ -269,6 +270,7 @@ export class UnifiedSyncEngine {
 
   private async syncF1Feed() {
     const nowIso = new Date().toISOString();
+    let synced = false;
     try {
       const response = await fetch('https://api.jolpi.ca/ergast/f1/current/driverStandings.json', {
         headers: { 'Accept': 'application/json', 'User-Agent': 'ApexMotorsports/2.0' },
@@ -286,20 +288,23 @@ export class UnifiedSyncEngine {
             points: parseFloat(top.points || '224'),
           };
           this.feeds.F1.recordCount = standings.length;
+          synced = true;
         }
       }
     } catch {
-      // Retain verified leader
+      // Keep the last known snapshot and report the failed refresh below.
     }
 
     this.feeds.F1.lastChecked = nowIso;
-    this.feeds.F1.status = 'VERIFIED_OFFICIAL';
+    this.feeds.F1.status = synced ? 'SYNCED' : 'AUDITED';
 
     this.addLog({
       timestamp: nowIso,
       domain: 'F1',
-      status: 'SUCCESS',
-      details: 'FIA Formula 1 World Championship: Live standings audited via official Jolpica API.',
+      status: synced ? 'SUCCESS' : 'AUDITED',
+      details: synced
+        ? 'FIA Formula 1 World Championship: structured standings received from the Jolpica API.'
+        : 'FIA Formula 1 World Championship: Jolpica refresh failed; last known snapshot retained.',
     });
   }
 
@@ -309,7 +314,27 @@ export class UnifiedSyncEngine {
 
     const nowIso = new Date().toISOString();
     feed.lastChecked = nowIso;
-    let httpStatus = 200;
+
+    const structuredResult = await fetchStructuredSeriesSnapshot(domain as StructuredSeriesId);
+    if (structuredResult.status === 'SYNCED' && structuredResult.snapshot) {
+      const leader = structuredResult.snapshot.standings[0];
+      feed.status = 'SYNCED';
+      feed.recordCount = structuredResult.snapshot.standings.length;
+      feed.leader = {
+        name: leader.name,
+        team: leader.team || 'Unknown team',
+        points: leader.points,
+      };
+      this.addLog({
+        timestamp: nowIso,
+        domain,
+        status: 'SUCCESS',
+        details: `${feed.name}: validated structured feed from ${structuredResult.snapshot.source}; ${feed.recordCount} standings imported.`,
+      });
+      return;
+    }
+
+    let httpStatus: number | null = null;
 
     // Real HTTP probe to official portal / feed
     try {
@@ -325,26 +350,18 @@ export class UnifiedSyncEngine {
         httpStatus = response.status;
       }
     } catch {
-      // Handled gracefully with portal connectivity verification
+      // A failed portal probe must not change standings or source status.
     }
 
-    // Special validation for MotoGP official standings
-    if (domain === 'MOTOGP') {
-      feed.leader = {
-        name: 'Jorge Martín',
-        team: 'Aprilia Racing',
-        points: 256,
-      };
-      feed.recordCount = 22;
-    }
-
-    feed.status = 'VERIFIED_OFFICIAL';
+    feed.status = 'AUDITED';
 
     this.addLog({
       timestamp: nowIso,
       domain,
-      status: 'SUCCESS',
-      details: `${feed.name}: Real-time HTTP check performed against official portal (${feed.officialPortal}) [HTTP ${httpStatus}]. Official standings calibrated: ${feed.leader.name} (${feed.leader.points} pts).`,
+      status: 'AUDITED',
+      details: httpStatus && httpStatus >= 200 && httpStatus < 300
+        ? `${feed.name}: portal responded with HTTP ${httpStatus}; ${structuredResult.reason || 'no structured result feed was configured'}, so standings were not changed.`
+        : `${feed.name}: portal probe did not provide a usable result feed${httpStatus ? ` (HTTP ${httpStatus})` : ''}; ${structuredResult.reason || 'standings were not changed'}.`,
     });
   }
 

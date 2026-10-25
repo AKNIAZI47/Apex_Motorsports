@@ -169,6 +169,9 @@ export interface CategorySeasonData {
   constructorStandings: ConstructorStanding[];
   races: Race[];
   metrics: SeasonMetrics;
+  dataAvailability?: 'live' | 'snapshot' | 'unavailable';
+  dataSource?: string;
+  lastUpdated?: string;
 }
 
 export interface TrackCoordinate {

@@ -74,9 +74,9 @@ export function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#04040a] text-[#f0f0ff] f1-carbon-bg flex flex-col selection:bg-[#ff1744] selection:text-white relative">
+    <div className="app-shell min-h-screen text-[#f0f0ff] flex flex-col selection:bg-[#f04444] selection:text-white relative">
       {/* Top Masthead */}
-      <header className="border-b border-white/10 glass-panel-elevated sticky top-0 z-40 backdrop-blur-2xl">
+      <header className="app-header border-b sticky top-0 z-40 backdrop-blur-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           {/* Brand Logo & Back Control */}
           <div className="flex items-center gap-3">
@@ -136,7 +136,7 @@ export function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="app-main flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ErrorBoundary>
           {/* 1. When no domain is selected and not viewing news: Show Domains Portal */}
           {!selectedDiscipline && activeTab !== 'news' && (

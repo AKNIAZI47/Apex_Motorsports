@@ -1,4 +1,4 @@
-import { Driver, Constructor, DriverStanding, ConstructorStanding, Race, MotorsportCategory, SeasonMetrics } from '../types';
+import { Driver, Constructor, DriverStanding, ConstructorStanding, MotorsportCategory, CategorySeasonData } from '../types';
 import { F1_STANDINGS } from './categories/f1Standings';
 import { MOTOGP_STANDINGS } from './categories/motogpStandings';
 import { WSBK_STANDINGS } from './categories/wsbkStandings';
@@ -11,15 +11,6 @@ import { DRIFT_STANDINGS } from './categories/driftStandings';
 import { GTWORLD_STANDINGS } from './categories/gtWorldStandings';
 
 export const CURRENT_YEAR = 2026;
-
-export interface CategorySeasonData {
-  category: MotorsportCategory;
-  year: number;
-  driverStandings: DriverStanding[];
-  constructorStandings: ConstructorStanding[];
-  races: Race[];
-  metrics: SeasonMetrics;
-}
 
 export const ALL_CATEGORY_STANDINGS: Record<MotorsportCategory, Record<number, CategorySeasonData>> = {
   F1: F1_STANDINGS,
@@ -72,7 +63,13 @@ export function getCategoryStandings(category: MotorsportCategory, year: number 
           const isF1Valid = category !== 'F1' || (r14?.winner?.driverId === 'antonelli' && r15?.winner?.driverId === 'russell');
 
           if (p1 >= p2 && isF1Valid) {
-            return parsed;
+            return {
+              ...parsed,
+              dataAvailability: 'snapshot',
+              dataSource: category === 'F1'
+                ? 'Checked-in snapshot; Jolpica adapter is available for explicit API reads'
+                : 'Checked-in repository snapshot; no structured live adapter configured',
+            };
           } else {
             localStorage.removeItem(key);
           }
@@ -105,7 +102,13 @@ export function getCategoryStandings(category: MotorsportCategory, year: number 
     });
   }
 
-  return result;
+  return {
+    ...result,
+    dataAvailability: 'snapshot',
+    dataSource: category === 'F1'
+      ? 'Checked-in snapshot; Jolpica adapter is available for explicit API reads'
+      : 'Checked-in repository snapshot; no structured live adapter configured',
+  };
 }
 
 /**

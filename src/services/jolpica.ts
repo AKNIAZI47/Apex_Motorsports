@@ -8,6 +8,7 @@ const CACHE_TTL_MS = 1000 * 60 * 5; // 5 mins
 
 type ApiSyncListener = (status: { isSyncing: boolean; lastSynced: Date | null; error: string | null }) => void;
 const listeners = new Set<ApiSyncListener>();
+const syncErrors = new Set<string>();
 let lastSyncedTime: Date | null = new Date();
 let isCurrentlySyncing = false;
 let lastSyncError: string | null = null;
@@ -28,7 +29,10 @@ async function fetchFromOfficialApi<T>(endpoint: string, fallback: T, force = fa
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -37,12 +41,14 @@ async function fetchFromOfficialApi<T>(endpoint: string, fallback: T, force = fa
 
     const data = await response.json();
     CACHE.set(url, { timestamp: Date.now(), data });
+    syncErrors.delete(url);
     lastSyncedTime = new Date();
     lastSyncError = null;
     return data;
   } catch (error: any) {
     console.warn(`[Jolpica/Ergast API] Fallback used for ${url}:`, error?.message || error);
     lastSyncError = error?.message || 'API connection fallback active';
+    syncErrors.add(url);
     return fallback;
   }
 }
@@ -61,11 +67,15 @@ export const JolpicaService = {
     notifySyncListeners();
     try {
       CACHE.clear();
+      syncErrors.clear();
       await Promise.all([
         this.getDriverStandings(year, true),
         this.getConstructorStandings(year, true),
         this.getRacesForSeason(year, true),
       ]);
+      if (syncErrors.size > 0) {
+        throw new Error(`Official API refresh failed for ${syncErrors.size} request(s)`);
+      }
       isCurrentlySyncing = false;
       lastSyncedTime = new Date();
       lastSyncError = null;

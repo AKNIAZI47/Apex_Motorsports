@@ -1,6 +1,6 @@
 {
-  "lastNightlySync": "2026-10-25T07:31:47.480Z",
-  "nextScheduledSync": "2026-10-26T00:00:00.000Z",
+  "lastNightlySync": "2026-10-25T08:09:15.804Z",
+  "nextScheduledSync": "2026-10-25T19:00:00.000Z",
   "feeds": {
     "F1": {
       "id": "F1",
@@ -8,13 +8,13 @@
       "governingBody": "FIA",
       "officialPortal": "https://www.formula1.com",
       "apiOrFeedEndpoint": "https://api.jolpi.ca/ergast/f1/current/driverStandings.json",
-      "lastChecked": "2026-10-25T07:31:47.480Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:15.805Z",
+      "status": "SYNCED",
       "recordCount": 23,
       "leader": {
         "name": "Andrea Kimi Antonelli",
-        "team": "Mercedes-AMG PETRONAS F1 Team",
-        "points": 280
+        "team": "Mercedes",
+        "points": 340
       }
     },
     "MOTOGP": {
@@ -23,8 +23,8 @@
       "governingBody": "FIM / Dorna Sports",
       "officialPortal": "https://www.motogp.com/en/results-standings",
       "apiOrFeedEndpoint": "https://www.motogp.com/en/results-standings",
-      "lastChecked": "2026-10-25T07:31:48.459Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:16.855Z",
+      "status": "AUDITED",
       "recordCount": 22,
       "leader": {
         "name": "Jorge Martín",
@@ -38,8 +38,8 @@
       "governingBody": "FIA / ACO",
       "officialPortal": "https://www.fiawec.com/en/season/result",
       "apiOrFeedEndpoint": "https://www.fiawec.com/en/season/result",
-      "lastChecked": "2026-10-25T07:31:49.084Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:18.006Z",
+      "status": "AUDITED",
       "recordCount": 18,
       "leader": {
         "name": "Kévin Estre / André Lotterer / Laurens Vanthoor",
@@ -53,8 +53,8 @@
       "governingBody": "FIM",
       "officialPortal": "https://www.worldsbk.com/en/results-statistics",
       "apiOrFeedEndpoint": "https://www.worldsbk.com/en/results-statistics",
-      "lastChecked": "2026-10-25T07:31:50.598Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:20.011Z",
+      "status": "AUDITED",
       "recordCount": 24,
       "leader": {
         "name": "Nicolò Bulega",
@@ -68,8 +68,8 @@
       "governingBody": "FIA / WRC Promoter",
       "officialPortal": "https://www.wrc.com/en/results-standings",
       "apiOrFeedEndpoint": "https://www.wrc.com/en/results-standings",
-      "lastChecked": "2026-10-25T07:31:51.959Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:21.241Z",
+      "status": "AUDITED",
       "recordCount": 10,
       "leader": {
         "name": "Elfyn Evans / Scott Martin",
@@ -83,8 +83,8 @@
       "governingBody": "INDYCAR LLC",
       "officialPortal": "https://www.indycar.com/Stats",
       "apiOrFeedEndpoint": "https://www.indycar.com/Stats",
-      "lastChecked": "2026-10-25T07:31:52.055Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:23.298Z",
+      "status": "AUDITED",
       "recordCount": 27,
       "leader": {
         "name": "Alex Palou",
@@ -98,8 +98,8 @@
       "governingBody": "Supercars Australia / Motorsport Australia",
       "officialPortal": "https://www.supercars.com/championship/standings",
       "apiOrFeedEndpoint": "https://www.supercars.com/championship/standings",
-      "lastChecked": "2026-10-25T07:31:54.282Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:27.236Z",
+      "status": "AUDITED",
       "recordCount": 24,
       "leader": {
         "name": "Will Brown",
@@ -113,8 +113,8 @@
       "governingBody": "ADAC Motorsport",
       "officialPortal": "https://www.dtm.com/en/standings",
       "apiOrFeedEndpoint": "https://www.dtm.com/en/standings",
-      "lastChecked": "2026-10-25T07:31:57.411Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:30.150Z",
+      "status": "AUDITED",
       "recordCount": 20,
       "leader": {
         "name": "Mirko Bortolotti",
@@ -128,8 +128,8 @@
       "governingBody": "SRO Motorsports Group",
       "officialPortal": "https://www.gt-world-challenge-europe.com/standings",
       "apiOrFeedEndpoint": "https://www.gt-world-challenge-europe.com/standings",
-      "lastChecked": "2026-10-25T07:31:59.245Z",
-      "status": "VERIFIED_OFFICIAL",
+      "lastChecked": "2026-10-25T08:09:31.406Z",
+      "status": "AUDITED",
       "recordCount": 30,
       "leader": {
         "name": "Dries Vanthoor & Charles Weerts",
@@ -139,6 +139,60 @@
     }
   },
   "recentLogs": [
+    {
+      "timestamp": "2026-10-25T08:09:31.406Z",
+      "domain": "GTWORLD",
+      "status": "AUDITED",
+      "details": "Fanatec GT World Challenge Powered by AWS: portal responded with HTTP 200; no structured result feed was configured, so standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:30.150Z",
+      "domain": "DTM",
+      "status": "AUDITED",
+      "details": "Deutsche Tourenwagen Masters: portal responded with HTTP 200; no structured result feed was configured, so standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:27.236Z",
+      "domain": "SUPERCARS",
+      "status": "AUDITED",
+      "details": "Repco Supercars Championship: portal responded with HTTP 200; no structured result feed was configured, so standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:23.298Z",
+      "domain": "INDYCAR",
+      "status": "AUDITED",
+      "details": "NTT IndyCar Series: portal responded with HTTP 200; no structured result feed was configured, so standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:21.241Z",
+      "domain": "WRC",
+      "status": "AUDITED",
+      "details": "FIA World Rally Championship: portal probe did not provide a usable result feed (HTTP 404); standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:20.011Z",
+      "domain": "WSBK",
+      "status": "AUDITED",
+      "details": "FIM Superbike World Championship (WorldSBK): portal probe did not provide a usable result feed (HTTP 404); standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:18.006Z",
+      "domain": "WEC",
+      "status": "AUDITED",
+      "details": "FIA World Endurance Championship: portal probe did not provide a usable result feed (HTTP 404); standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:16.855Z",
+      "domain": "MOTOGP",
+      "status": "AUDITED",
+      "details": "FIM MotoGP World Championship: portal probe did not provide a usable result feed (HTTP 404); standings were not changed."
+    },
+    {
+      "timestamp": "2026-10-25T08:09:15.805Z",
+      "domain": "F1",
+      "status": "SUCCESS",
+      "details": "FIA Formula 1 World Championship: structured standings received from the Jolpica API."
+    },
     {
       "timestamp": "2026-10-25T07:31:59.245Z",
       "domain": "GTWORLD",

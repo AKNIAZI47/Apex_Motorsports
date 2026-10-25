@@ -1,21 +1,21 @@
 # Apex Motorsports
 
-Apex Motorsports is an enterprise-grade racing intelligence and telemetry hub covering 10 premier motorsport championships worldwide: **Formula 1, MotoGP, WorldSBK, FIA World Endurance Championship (WEC), FIA World Rally Championship (WRC), NTT IndyCar Series, Repco Supercars Championship, Deutsche Tourenwagen Masters (DTM), Fanatec GT World Challenge, and Formula DRIFT**.
+Apex Motorsports is a React and Express application for browsing motorsport calendars, standings, driver and constructor profiles, news, and simulated circuit telemetry across ten series.
 
-Built with React 18, TypeScript, Tailwind CSS, Vite, and an Express proxy/cache backend, Apex Motorsports delivers synchronized race classifications, championship standings with strict mathematical invariants, dynamic telemetry tracking, and comprehensive driver/constructor profiles.
+Formula 1 data can be refreshed from the Jolpica/Ergast-compatible API through the Express proxy. The other series currently use checked-in season data; the server sync engine records source checks and does not claim to import classifications from portals that do not expose a configured data feed.
 
 ---
 
 ## Key Features
 
 - **Multi-Championship Coverage**: Native integration for 10 distinct motorsport categories across open-wheel, prototype endurance, production GT3, touring car, rally, motorcycle, and drift disciplines.
-- **Accurate Season Calendars**: Race calendars calibrated against official governing body calendars (FIA, FIM, Dorna Sports, INDYCAR LLC, SRO, ADAC, Supercars Australia).
-- **Sequential Championship Metrics**: Real-time leaderboards, driver standings, constructor standings, and scheduled vs. completed round verification.
+- **Season Calendars**: Checked-in calendars and standings for the supported series, with F1 refresh support through Jolpica.
+- **Championship Metrics**: Leaderboards, driver standings, constructor standings, and scheduled versus classified rounds.
 - **Interactive Telemetry & Track Replay**: 2D circuit telemetry viewer featuring apex tracking, sector times, telemetry curves, speed traps, and lap telemetry playback.
 - **Driver & Constructor Profiles**: Detailed competitor biographies, career statistics, championship records, vehicle specifications, and engine power unit specifications.
 - **Head-to-Head Comparison Engine**: Direct driver telemetry comparison highlighting head-to-head qualifying deltas, race pace, podium percentages, and career win rates.
-- **Automated Data Reconciliation**: Server-side sync engine with scheduled daily polling at 00:00 UTC and caching layer (`server_cache/`) ensuring zero disruption or rate limiting.
-- **Restful API Gateway**: Express proxy caching official feed results and telemetry data with 5-minute memory TTL.
+- **Source Checks**: Server-side sync engine checks configured feeds on a daily timer and persists its audit state in `server_cache/`.
+- **REST API Gateway**: Express proxy for Jolpica and optional Blacktop requests with a five-minute in-memory cache.
 
 ---
 
@@ -104,13 +104,20 @@ npm start
 The sync architecture operates on two coordinated layers:
 
 1. **Server Synchronization (`server/unifiedSyncEngine.ts`)**:
-   - Executes daily reconciliation across official championship feeds.
-   - Maintains persistence in `server_cache/unified_motorsport_data.json`.
+   - Checks the configured F1 feed and probes the listed series portals.
+   - Persists sync status and audit logs in `server_cache/unified_motorsport_data.json`.
    - Exposes REST endpoints at `/api/sync/status` and `/api/sync/run-nightly`.
 
 2. **Client Collector (`src/services/motorsportDailyLiveCollector.ts`)**:
    - Manages client-side cache hydration with versioned localStorage keys.
    - Dispatches `motorsport_data_updated` custom events to re-render active dashboards seamlessly without page reloads.
+
+### Data freshness and publication limits
+
+- `SYNCED` means a structured feed was fetched and parsed. At present this is implemented for F1 through Jolpica.
+- `AUDITED` means the configured source was checked, but no structured result feed was imported. The existing checked-in standings remain unchanged.
+- A successful HTTP response from an official website is not evidence that its standings were collected.
+- The application does not push commits to GitHub from the running server. Automatic GitHub publication should only be enabled after each series has a licensed, structured adapter and validation tests. Committing unverified portal snapshots would make stale or incorrect data look authoritative.
 
 ---
 

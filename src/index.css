@@ -1,13 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --ink: #e9edf2;
+    --muted: #87919d;
+    --surface: #11161c;
+    --line: rgba(233, 237, 242, 0.12);
+    --accent: #f04444;
+  }
+
   body {
-    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background: #0b0f13;
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
   
   code, pre {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
+}
+
+.app-shell {
+  background: linear-gradient(135deg, #0b0f13 0%, #0e141a 52%, #121820 100%);
+  background-attachment: fixed;
+}
+
+.app-header {
+  background: rgba(11, 15, 19, 0.92);
+  border-color: var(--line) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.app-main {
+  max-width: 1380px;
+}
+
+h1, h2, h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.series-card {
+  background: var(--surface);
+  border-color: var(--line);
+  border-radius: 10px;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.18);
+}
+
+.series-card:hover {
+  border-color: rgba(240, 68, 68, 0.55);
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px);
+}
+
+.series-card-body {
+  background: var(--surface);
 }
 
 /* Ultra-refined minimal scrollbar */

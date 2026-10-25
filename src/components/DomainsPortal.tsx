@@ -55,7 +55,7 @@ export const DomainsPortal: React.FC<DomainsPortalProps> = ({
             <div
               key={catKey}
               onClick={() => onSelectDomain(catKey)}
-              className="group relative glass-panel-elevated rounded-2xl border border-white/10 hover:border-white/25 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#ff1744]/10 cursor-pointer flex flex-col"
+              className="series-card group relative border overflow-hidden transition-all duration-300 cursor-pointer flex flex-col"
             >
               {/* Image Banner */}
               <div className="relative h-48 w-full overflow-hidden bg-black/60">
@@ -69,11 +69,14 @@ export const DomainsPortal: React.FC<DomainsPortalProps> = ({
               </div>
 
               {/* Card Body */}
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4 bg-gradient-to-b from-[#0b0c10] to-[#050508]">
+              <div className="series-card-body p-5 flex-1 flex flex-col justify-between space-y-4">
                 <div>
                   <h3 className="text-xl font-black text-white uppercase tracking-tight group-hover:text-[#ff4d6d] transition-colors">
                     {cat.name}
                   </h3>
+                  <p className="mt-1 text-[10px] font-mono uppercase tracking-wider text-amber-300/70">
+                    Repository snapshot
+                  </p>
                 </div>
 
                 {/* Leader Preview (Points Leader from Official Standings) */}
