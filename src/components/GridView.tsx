@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Users, Search, Filter } from 'lucide-react';
-import { Driver, MotorsportCategory } from '../types';
+import { Driver, DriverStanding, MotorsportCategory } from '../types';
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
 import { getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
 import { getDriverMedia } from '../data/driverMedia';
+import { JolpicaService } from '../services/jolpica';
 
 interface Props {
   onSelectDriver?: (driver: Driver) => void;
@@ -37,7 +38,23 @@ export const GridView: React.FC<Props> = ({
     return getCategoryStandings(selectedCategory, CURRENT_YEAR);
   }, [selectedCategory]);
 
-  const standings = seasonData.driverStandings || [];
+  const [liveF1Standings, setLiveF1Standings] = useState<DriverStanding[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (selectedCategory !== 'F1') {
+      setLiveF1Standings(null);
+      return;
+    }
+    JolpicaService.getCurrentF1Standings().then((snapshot) => {
+      if (!cancelled) setLiveF1Standings(snapshot.live ? snapshot.driverStandings : null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory]);
+
+  const standings = liveF1Standings || seasonData.driverStandings || [];
 
   const filteredStandings = useMemo(() => {
     if (!searchQuery.trim()) return standings;

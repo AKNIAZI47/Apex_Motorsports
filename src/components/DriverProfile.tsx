@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Trophy, 
   Award, 
@@ -10,10 +10,11 @@ import {
   Flag,
   User
 } from 'lucide-react';
-import { Driver, MotorsportCategory } from '../types';
+import { Driver, DriverStanding, MotorsportCategory } from '../types';
 import { getAllMotorsportDrivers, getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
 import { getDriverMedia } from '../data/driverMedia';
+import { JolpicaService } from '../services/jolpica';
 
 interface Props {
   initialDriver?: Driver | null;
@@ -71,18 +72,39 @@ export const DriverProfile: React.FC<Props> = ({
   // Find standings for the selected driver
   const driverCat = selectedDriver?.category || 'F1';
   const categoryData = getCategoryStandings(driverCat, CURRENT_YEAR);
-  const currentStanding = categoryData.driverStandings.find(
+  const [liveF1Standings, setLiveF1Standings] = useState<DriverStanding[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (driverCat !== 'F1') {
+      setLiveF1Standings(null);
+      return;
+    }
+
+    JolpicaService.getCurrentF1Standings().then((snapshot) => {
+      if (!cancelled) {
+        setLiveF1Standings(snapshot.live ? snapshot.driverStandings : null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [driverCat]);
+
+  const currentStanding = (liveF1Standings || categoryData.driverStandings).find(
     (s) => s.driver.driverId === selectedDriver?.driverId
   );
+  const profileDriver = currentStanding?.driver || selectedDriver;
 
   const catMeta = MOTORSPORT_CATEGORIES[driverCat];
-  const teamColor = selectedDriver?.teamColor || catMeta?.badgeColor || '#e8002d';
+  const teamColor = profileDriver?.teamColor || catMeta?.badgeColor || '#e8002d';
 
   // Get media (portrait and ride image)
   const media = useMemo(() => {
     if (!selectedDriver) return null;
-    return getDriverMedia(selectedDriver, driverCat);
-  }, [selectedDriver, driverCat]);
+    return getDriverMedia(profileDriver || selectedDriver, driverCat);
+  }, [profileDriver, driverCat]);
 
   if (!selectedDriver) {
     return (
@@ -192,10 +214,10 @@ export const DriverProfile: React.FC<Props> = ({
                   style={{ backgroundColor: `${teamColor}33`, borderColor: teamColor }}
                 >
                   <span className="text-3xl">
-                    {selectedDriver.code || selectedDriver.familyName?.substring(0, 3)?.toUpperCase() || 'DRV'}
+                    {profileDriver.code || profileDriver.familyName?.substring(0, 3)?.toUpperCase() || 'DRV'}
                   </span>
                   <span className="text-[10px] tracking-widest text-slate-400 mt-1 uppercase font-sans">
-                    #{selectedDriver.permanentNumber || '00'}
+                    #{profileDriver.permanentNumber || '00'}
                   </span>
                 </div>
               </div>
@@ -203,34 +225,34 @@ export const DriverProfile: React.FC<Props> = ({
               {/* Driver Details & Bio */}
               <div className="flex-1 text-center sm:text-left space-y-2">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  {selectedDriver.permanentNumber && (
+                  {profileDriver.permanentNumber && (
                     <span className="px-2.5 py-0.5 rounded bg-white/10 text-white font-mono text-xs font-bold">
-                      Car #{selectedDriver.permanentNumber}
+                      Car #{profileDriver.permanentNumber}
                     </span>
                   )}
 
                   <span className="px-2.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300 text-xs font-medium">
-                    {selectedDriver.nationality}
+                    {profileDriver.nationality}
                   </span>
 
-                  {selectedDriver.dateOfBirth && (
+                  {profileDriver.dateOfBirth && (
                     <span className="px-2 py-0.5 rounded bg-white/5 text-slate-400 text-xs font-mono">
-                      DOB: {selectedDriver.dateOfBirth}
+                      DOB: {profileDriver.dateOfBirth}
                     </span>
                   )}
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
-                  {selectedDriver.fullName}
+                  {profileDriver.fullName}
                 </h2>
 
                 <p className="text-base font-semibold" style={{ color: teamColor }}>
-                  {selectedDriver.constructorName}
+                  {profileDriver.constructorName}
                 </p>
 
-                {selectedDriver.biography && (
+                {profileDriver.biography && (
                   <p className="text-xs text-slate-300 leading-relaxed pt-2">
-                    {selectedDriver.biography}
+                    {profileDriver.biography}
                   </p>
                 )}
               </div>

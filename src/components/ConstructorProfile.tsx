@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Shield, Trophy, Wrench, Users, Gauge, Cpu, Flame } from 'lucide-react';
-import { Constructor, Driver, MotorsportCategory } from '../types';
+import { Constructor, ConstructorStanding, Driver, DriverStanding, MotorsportCategory } from '../types';
 import { getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
+import { JolpicaService } from '../services/jolpica';
 
 interface Props {
   onSelectDriver?: (driver: Driver) => void;
@@ -29,8 +30,32 @@ export const ConstructorProfile: React.FC<Props> = ({
     return getCategoryStandings(selectedCategory, CURRENT_YEAR);
   }, [selectedCategory]);
 
-  const standings = seasonData.constructorStandings;
-  const drivers = seasonData.driverStandings;
+  const [liveF1Data, setLiveF1Data] = useState<{
+    constructorStandings: ConstructorStanding[];
+    driverStandings: DriverStanding[];
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (selectedCategory !== 'F1') {
+      setLiveF1Data(null);
+      return;
+    }
+    JolpicaService.getCurrentF1Standings().then((snapshot) => {
+      if (!cancelled && snapshot.live) {
+        setLiveF1Data({
+          constructorStandings: snapshot.constructorStandings,
+          driverStandings: snapshot.driverStandings,
+        });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory]);
+
+  const standings = liveF1Data?.constructorStandings || seasonData.constructorStandings;
+  const drivers = liveF1Data?.driverStandings || seasonData.driverStandings;
 
   const selectedCtor = useMemo(() => {
     if (selectedCtorId) {

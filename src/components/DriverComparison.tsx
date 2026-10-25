@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Trophy, Award, Zap, Flag, Shield, Gauge, Activity, Compass, Flame } from 'lucide-react';
-import { Driver, MotorsportCategory } from '../types';
+import { Driver, DriverStanding, MotorsportCategory } from '../types';
 import { getAllMotorsportDrivers, ALL_CATEGORY_STANDINGS } from '../data/allMotorsportStandings';
+import { JolpicaService } from '../services/jolpica';
 
 const LEGENDS: Driver[] = [
   {
@@ -99,6 +100,17 @@ export const DriverComparison: React.FC<Props> = ({
   }, []);
 
   const [filterCategory, setFilterCategory] = useState<string>(propCategory || 'F1');
+  const [liveF1Standings, setLiveF1Standings] = useState<DriverStanding[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    JolpicaService.getCurrentF1Standings().then((snapshot) => {
+      if (!cancelled && snapshot.live) setLiveF1Standings(snapshot.driverStandings);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (propCategory) {
@@ -155,9 +167,18 @@ export const DriverComparison: React.FC<Props> = ({
     let position = 0;
 
     const targetCat = (driver.category || filterCategory) as MotorsportCategory;
+    const liveStanding = targetCat === 'F1'
+      ? liveF1Standings?.find((s) => s.driver.driverId === driver.driverId)
+      : undefined;
     const catData = ALL_CATEGORY_STANDINGS[targetCat]?.[2026] || ALL_CATEGORY_STANDINGS[targetCat]?.[2025];
+
+    if (liveStanding) {
+      seasonPoints = liveStanding.points || 0;
+      seasonWins = liveStanding.wins || 0;
+      position = liveStanding.position || 0;
+    }
     
-    if (catData) {
+    if (!liveStanding && catData) {
       const standing = catData.driverStandings.find((s) => s.driver.driverId === driver.driverId);
       if (standing) {
         seasonPoints = standing.points || 0;
@@ -191,8 +212,8 @@ export const DriverComparison: React.FC<Props> = ({
     };
   };
 
-  const statsA = useMemo(() => getDriverStats(driverA), [driverA]);
-  const statsB = useMemo(() => getDriverStats(driverB), [driverB]);
+  const statsA = useMemo(() => getDriverStats(driverA), [driverA, liveF1Standings]);
+  const statsB = useMemo(() => getDriverStats(driverB), [driverB, liveF1Standings]);
 
   // Derived telemetry metrics for head-to-head radar comparisons
   const calculateAttributeScore = (driver: Driver, attr: string): number => {
