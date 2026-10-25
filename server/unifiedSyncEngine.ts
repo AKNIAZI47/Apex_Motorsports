@@ -63,7 +63,7 @@ export class UnifiedSyncEngine {
       lastChecked: '',
       status: 'VERIFIED_OFFICIAL',
       recordCount: 22,
-      leader: { name: 'Andrea Kimi Antonelli', team: 'Mercedes-AMG PETRONAS F1 Team', points: 267 },
+      leader: { name: 'Andrea Kimi Antonelli', team: 'Mercedes-AMG PETRONAS F1 Team', points: 280 },
     },
     MOTOGP: {
       id: 'MOTOGP',

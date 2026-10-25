@@ -43,6 +43,9 @@ if (typeof window !== 'undefined' && window.localStorage) {
     const legacyCats = ['F1', 'MOTOGP', 'WSBK', 'WEC', 'WRC', 'INDYCAR', 'SUPERCARS', 'DTM', 'GTWORLD', 'DRIFT'];
     legacyCats.forEach((c) => {
       localStorage.removeItem(`gridscope_official_standings_v5_${c}_2026`);
+      localStorage.removeItem(`gridscope_official_standings_v6_${c}_2026`);
+      localStorage.removeItem(`gridscope_official_standings_v7_${c}_2026`);
+      localStorage.removeItem(`gridscope_official_standings_v8_${c}_2026`);
     });
   } catch {
     // ignore
@@ -55,7 +58,7 @@ if (typeof window !== 'undefined' && window.localStorage) {
 export function getCategoryStandings(category: MotorsportCategory, year: number = CURRENT_YEAR): CategorySeasonData {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      const key = `gridscope_official_standings_v6_${category}_${year}`;
+      const key = `gridscope_official_standings_v9_${category}_${year}`;
       const cached = localStorage.getItem(key);
       if (cached) {
         const parsed = JSON.parse(cached);
@@ -63,7 +66,12 @@ export function getCategoryStandings(category: MotorsportCategory, year: number 
           // Mathematical sanity: position 1 must have >= points than position 2
           const p1 = parsed.driverStandings[0]?.points || 0;
           const p2 = parsed.driverStandings[1]?.points || 0;
-          if (p1 >= p2) {
+          // Ensure F1 round 14 & 15 have their verified winners
+          const r14 = parsed.races?.find((r: any) => r.round === 14);
+          const r15 = parsed.races?.find((r: any) => r.round === 15);
+          const isF1Valid = category !== 'F1' || (r14?.winner?.driverId === 'antonelli' && r15?.winner?.driverId === 'russell');
+
+          if (p1 >= p2 && isF1Valid) {
             return parsed;
           } else {
             localStorage.removeItem(key);

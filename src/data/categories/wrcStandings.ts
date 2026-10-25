@@ -7,10 +7,10 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
     metrics: {
       year: 2026,
       totalRaces: 13,
-      completedRaces: 9,
+      completedRaces: 12,
       championDriver: 'Elfyn Evans (Toyota Gazoo Racing WRT)',
       championConstructor: 'Toyota Gazoo Racing World Rally Team',
-      mostWinsDriver: { name: 'Sébastien Ogier', count: 3 },
+      mostWinsDriver: { name: 'Kalle Rovanperä & Sébastien Ogier', count: 3 },
       mostPolesDriver: { name: 'Kalle Rovanperä', count: 5 },
       leadingTeam: 'Toyota Gazoo Racing WRT',
     },
@@ -803,7 +803,13 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Lamia',
         country: 'Greece',
         date: '2026-09-06',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'neuville',
+          fullName: 'Thierry Neuville',
+          constructorName: 'Hyundai Shell Mobis WRT',
+          time: '3:38:04.2',
+        },
         totalLaps: 15,
       },
       {
@@ -815,7 +821,13 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Concepción',
         country: 'Chile',
         date: '2026-09-27',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'rovanpera',
+          fullName: 'Kalle Rovanperä',
+          constructorName: 'Toyota Gazoo Racing WRT',
+          time: '2:58:59.8',
+        },
         totalLaps: 16,
       },
       {
@@ -827,7 +839,13 @@ export const WRC_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Passau',
         country: 'Germany',
         date: '2026-10-18',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'tanak',
+          fullName: 'Ott Tänak',
+          constructorName: 'Hyundai Shell Mobis WRT',
+          time: '2:37:34.6',
+        },
         totalLaps: 18,
       },
       {

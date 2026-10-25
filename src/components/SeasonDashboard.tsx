@@ -230,14 +230,21 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
                         {race.date}
                       </td>
                       <td className="py-3.5 px-6">
-                        {race.isCompleted && race.winner ? (
-                          <div className="flex items-center gap-2">
-                            <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <div>
-                              <div className="font-semibold text-white">{race.winner.fullName}</div>
-                              <div className="text-xs text-slate-400">{race.winner.constructorName}</div>
+                        {race.isCompleted ? (
+                          race.winner ? (
+                            <div className="flex items-center gap-2">
+                              <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <div>
+                                <div className="font-semibold text-white">{race.winner.fullName}</div>
+                                <div className="text-xs text-slate-400">{race.winner.constructorName}</div>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Trophy className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <div className="text-xs font-semibold text-emerald-400">Official Classification Finalized</div>
+                            </div>
+                          )
                         ) : (
                           <span className="text-xs text-slate-400 font-mono flex items-center gap-1.5">
                             <Clock className="w-3 h-3 text-slate-500" />
@@ -250,6 +257,10 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
                           <div className="text-xs font-mono text-slate-300">
                             {race.winner.time}
                           </div>
+                        ) : race.isCompleted ? (
+                          <span className="text-xs text-slate-400 font-mono">
+                            Full Distance
+                          </span>
                         ) : (
                           <span className="text-xs text-slate-500 font-mono">
                             {race.totalLaps ? `${race.totalLaps} Laps Scheduled` : 'Scheduled'}

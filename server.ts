@@ -353,7 +353,7 @@ import fs from "fs";
 // Manual Results Store for Node with File Persistence
 const manualNodeResults = new Map<string, any>();
 const ALLOWED_MANUAL_SERIES = new Set(["DTM", "FORMULA_DRIFT", "SUPER_V8"]);
-const MANUAL_RESULTS_FILE = path.join(process.cwd(), "python_backend", "manual_results.json");
+const MANUAL_RESULTS_FILE = path.join(process.cwd(), "server_cache", "manual_results.json");
 
 function loadNodeManualResults() {
   try {

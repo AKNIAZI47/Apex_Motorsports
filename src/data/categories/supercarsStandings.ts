@@ -6,8 +6,8 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
     year: 2026,
     metrics: {
       year: 2026,
-      totalRaces: 24,
-      completedRaces: 16,
+      totalRaces: 22,
+      completedRaces: 18,
       championDriver: 'Will Brown (Red Bull Ampol Racing #87)',
       championConstructor: 'Triple Eight Race Engineering (Chevrolet Camaro Gen3)',
       mostWinsDriver: { name: 'Chaz Mostert', count: 4 },
@@ -1210,7 +1210,13 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Melbourne, VIC',
         country: 'Australia',
         date: '2026-09-14',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'brown',
+          fullName: 'Will Brown / Scott Pye',
+          constructorName: 'Red Bull Ampol Racing',
+          time: '3:15:22.450',
+        },
         totalLaps: 161,
       },
       {
@@ -1222,7 +1228,13 @@ export const SUPERCARS_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Bathurst, NSW',
         country: 'Australia',
         date: '2026-10-12',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'kostecki',
+          fullName: 'Brodie Kostecki / Todd Hazelwood',
+          constructorName: 'Erebus Motorsport (Camaro)',
+          time: '5:58:03.064',
+        },
         totalLaps: 161,
       },
       {

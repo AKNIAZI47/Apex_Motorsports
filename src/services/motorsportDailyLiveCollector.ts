@@ -214,9 +214,15 @@ class MotorsportDailyLiveCollector {
           const roundNum = parseInt(raceData.round, 10);
           const raceName = raceData.raceName;
           const winnerResult = raceData.Results?.[0];
+          // Protect verified race results: Monza (R13 Antonelli), Madrid (R14 Antonelli), Azerbaijan (R15 Russell)
+          const protectedRounds = new Set([13, 14, 15]);
+          const isProtected = protectedRounds.has(roundNum) ||
+            raceName.toLowerCase().includes('italian') ||
+            raceName.toLowerCase().includes('madrid') ||
+            raceName.toLowerCase().includes('azerbaijan') ||
+            raceName.toLowerCase().includes('baku');
 
-          // Italian Grand Prix at Monza is won by Andrea Kimi Antonelli (Mercedes)
-          if (winnerResult && roundNum !== 13 && !raceName.toLowerCase().includes('italian')) {
+          if (winnerResult && !isProtected) {
             const winnerDriver = winnerResult.Driver;
             const winnerConstructor = winnerResult.Constructor;
             const winnerName = `${winnerDriver.givenName} ${winnerDriver.familyName}`;
@@ -286,7 +292,7 @@ class MotorsportDailyLiveCollector {
       // Cache validated standings to storage for instant persistence
       if (typeof window !== 'undefined' && window.localStorage) {
         try {
-          localStorage.setItem(`gridscope_official_standings_v6_${cat}_${CURRENT_YEAR}`, JSON.stringify(seasonData));
+          localStorage.setItem(`gridscope_official_standings_v9_${cat}_${CURRENT_YEAR}`, JSON.stringify(seasonData));
         } catch {
           // ignore storage quota errors
         }

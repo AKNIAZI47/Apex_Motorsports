@@ -7,11 +7,11 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
     metrics: {
       year: 2026,
       totalRaces: 22,
-      completedRaces: 13,
+      completedRaces: 17,
       championDriver: 'Jorge Martín (Aprilia Racing)',
       championConstructor: 'Aprilia Racing',
-      mostWinsDriver: { name: 'Jorge Martín & Marc Márquez', count: 3 },
-      mostPolesDriver: { name: 'Jorge Martín', count: 4 },
+      mostWinsDriver: { name: 'Jorge Martín & Marc Márquez', count: 4 },
+      mostPolesDriver: { name: 'Jorge Martín', count: 5 },
       leadingTeam: 'Aprilia Racing',
     },
     driverStandings: [
@@ -1073,7 +1073,13 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Misano Adriatico',
         country: 'Italy',
         date: '2026-09-20',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'bastianini',
+          fullName: 'Enea Bastianini',
+          constructorName: 'Ducati Lenovo Team',
+          time: '41:14.653',
+        },
         totalLaps: 27,
       },
       {
@@ -1085,7 +1091,13 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Lombok',
         country: 'Indonesia',
         date: '2026-09-27',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'martin',
+          fullName: 'Jorge Martín',
+          constructorName: 'Prima Pramac Racing',
+          time: '41:04.389',
+        },
         totalLaps: 27,
       },
       {
@@ -1097,7 +1109,13 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Motegi',
         country: 'Japan',
         date: '2026-10-04',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'bagnaia',
+          fullName: 'Francesco Bagnaia',
+          constructorName: 'Ducati Lenovo Team',
+          time: '42:09.790',
+        },
         totalLaps: 24,
       },
       {
@@ -1109,7 +1127,13 @@ export const MOTOGP_STANDINGS: Record<number, CategorySeasonData> = {
         locality: 'Phillip Island',
         country: 'Australia',
         date: '2026-10-18',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'marquez',
+          fullName: 'Marc Márquez',
+          constructorName: 'Gresini Racing MotoGP',
+          time: '39:47.702',
+        },
         totalLaps: 27,
       },
       {

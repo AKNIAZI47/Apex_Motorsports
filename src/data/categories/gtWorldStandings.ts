@@ -7,7 +7,7 @@ export const GTWORLD_STANDINGS: Record<number, CategorySeasonData> = {
     metrics: {
       year: 2026,
       totalRaces: 8,
-      completedRaces: 6,
+      completedRaces: 7,
       championDriver: 'Dries Vanthoor & Charles Weerts (Team WRT / BMW M4 GT3 EVO)',
       championConstructor: 'Team WRT / BMW M Motorsport',
       mostWinsDriver: { name: 'Dries Vanthoor / Charles Weerts', count: 3 },
@@ -970,7 +970,13 @@ export const GTWORLD_STANDINGS: Record<number, CategorySeasonData> = {
         country: 'Spain',
         date: '2026-10-11',
         time: '15:00:00Z',
-        isCompleted: false,
+        isCompleted: true,
+        winner: {
+          driverId: 'engel',
+          fullName: 'Maro Engel / Lucas Auer / Daniel Juncadella',
+          constructorName: 'Mercedes-AMG Team MANN-FILTER',
+          time: '3:01:12.330',
+        },
         totalLaps: 88,
       },
       {

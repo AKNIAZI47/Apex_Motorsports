@@ -548,6 +548,54 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     ],
   },
 
+  madring: {
+    id: 'madring',
+    name: 'Circuito de Madrid (Spanish GP Venue)',
+    location: 'IFEMA, Madrid',
+    country: 'Spain',
+    lapLengthKm: 5.474,
+    turns: 20,
+    category: 'F1',
+    lapRecord: {
+      time: '1:31.142',
+      driver: 'Andrea Kimi Antonelli (Mercedes W17)',
+      year: 2026,
+    },
+    drsZones: 2,
+    surfaceType: 'STREET',
+    pathData: 'M 310,250 L 330,240 L 380,240 L 420,250 L 460,265 L 490,260 L 520,240 L 550,220 L 570,230 L 575,250 L 565,275 L 545,300 L 525,325 L 500,345 L 470,360 L 430,375 L 390,390 L 350,400 L 310,405 L 280,395 L 260,375 L 255,345 L 265,315 L 285,280 L 310,250 Z',
+    keyCoordinates: [
+      { x: 380, y: 240, speed: 295, distancePct: 0.15 },
+      { x: 550, y: 220, speed: 125, distancePct: 0.35 },
+      { x: 500, y: 345, speed: 305, distancePct: 0.65 },
+      { x: 260, y: 375, speed: 110, distancePct: 0.88 },
+    ],
+  },
+
+  baku: {
+    id: 'baku',
+    name: 'Baku City Circuit (Azerbaijan GP)',
+    location: 'Baku Boulevard, Baku',
+    country: 'Azerbaijan',
+    lapLengthKm: 6.003,
+    turns: 20,
+    category: 'F1',
+    lapRecord: {
+      time: '1:32.580',
+      driver: 'George Russell (Mercedes W17)',
+      year: 2026,
+    },
+    drsZones: 2,
+    surfaceType: 'STREET',
+    pathData: 'M 250,230 L 290,230 L 360,230 L 440,230 L 520,230 L 580,230 L 600,245 L 595,270 L 560,290 L 520,310 L 470,335 L 420,355 L 370,380 L 320,405 L 270,420 L 235,410 L 220,380 L 225,350 L 235,320 L 240,285 L 245,250 L 250,230 Z',
+    keyCoordinates: [
+      { x: 440, y: 230, speed: 350, distancePct: 0.22 },
+      { x: 580, y: 230, speed: 110, distancePct: 0.45 },
+      { x: 420, y: 355, speed: 280, distancePct: 0.70 },
+      { x: 220, y: 380, speed: 85, distancePct: 0.90 },
+    ],
+  },
+
   // ==========================================
   // 2. WEC HYPERCAR & 24H (Category: 'WEC')
   // ==========================================
@@ -1750,3 +1798,6 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     ],
   },
 };
+
+// Aliases for F1 calendar track IDs
+CIRCUITS.americas = { ...CIRCUITS.cota_f1, id: 'americas' };

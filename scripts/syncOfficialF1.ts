@@ -239,7 +239,7 @@ async function main() {
   }).join(',\n');
 
   // Parse Races
-  const today = new Date('2026-08-23T00:00:00Z');
+  const today = new Date();
   const racesCode = rawRaces.map(r => {
     const roundNum = parseInt(r.round, 10);
     const raceDate = new Date(r.date + 'T00:00:00Z');
