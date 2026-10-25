@@ -7,6 +7,12 @@ const CACHE = new Map<string, { timestamp: number; data: any }>();
 const CACHE_TTL_MS = 1000 * 60 * 5; // 5 mins
 
 type ApiSyncListener = (status: { isSyncing: boolean; lastSynced: Date | null; error: string | null }) => void;
+export interface CurrentF1StandingsSnapshot {
+  driverStandings: DriverStanding[];
+  constructorStandings: ConstructorStanding[];
+  live: boolean;
+  error: string | null;
+}
 const listeners = new Set<ApiSyncListener>();
 const syncErrors = new Set<string>();
 let lastSyncedTime: Date | null = new Date();
@@ -87,6 +93,22 @@ export const JolpicaService = {
       notifySyncListeners();
       return { success: false, error: lastSyncError ?? undefined };
     }
+  },
+
+  async getCurrentF1Standings(): Promise<CurrentF1StandingsSnapshot> {
+    CACHE.clear();
+    syncErrors.clear();
+    lastSyncError = null;
+
+    const driverStandings = await this.getDriverStandings(2026, true);
+    const constructorStandings = await this.getConstructorStandings(2026, true);
+
+    return {
+      driverStandings,
+      constructorStandings,
+      live: syncErrors.size === 0,
+      error: syncErrors.size === 0 ? null : lastSyncError || 'Official F1 feed unavailable',
+    };
   },
 
   getAvailableYears(): number[] {

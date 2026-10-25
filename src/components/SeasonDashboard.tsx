@@ -12,6 +12,7 @@ import { RaceDetailModal } from './RaceDetailModal';
 import { getCategoryStandings, CURRENT_YEAR } from '../data/allMotorsportStandings';
 import { MOTORSPORT_CATEGORIES } from '../data/motorsportCategories';
 import { motorsportDailyLiveCollector } from '../services/motorsportDailyLiveCollector';
+import { JolpicaService } from '../services/jolpica';
 
 interface SeasonDashboardProps {
   category?: MotorsportCategory;
@@ -26,6 +27,10 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'calendar' | 'drivers' | 'constructors'>('calendar');
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [updateTick, setUpdateTick] = useState(0);
+  const [liveF1Standings, setLiveF1Standings] = useState<{
+    driverStandings: DriverStanding[];
+    constructorStandings: ConstructorStanding[];
+  } | null>(null);
 
   useEffect(() => {
     if (propCategory) {
@@ -51,13 +56,39 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (selectedCategory !== 'F1') {
+      setLiveF1Standings(null);
+      return;
+    }
+
+    JolpicaService.getCurrentF1Standings().then((snapshot) => {
+      if (!cancelled && snapshot.live) {
+        setLiveF1Standings({
+          driverStandings: snapshot.driverStandings,
+          constructorStandings: snapshot.constructorStandings,
+        });
+      } else if (!cancelled) {
+        setLiveF1Standings(null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, updateTick]);
+
   // Season data for selected category
   const seasonData = useMemo(() => {
     return getCategoryStandings(selectedCategory, CURRENT_YEAR);
   }, [selectedCategory, updateTick]);
 
   const activeCategoryInfo = MOTORSPORT_CATEGORIES[selectedCategory];
-  const { races, driverStandings, constructorStandings, metrics } = seasonData;
+  const { races, metrics } = seasonData;
+  const driverStandings = liveF1Standings?.driverStandings || seasonData.driverStandings;
+  const constructorStandings = liveF1Standings?.constructorStandings || seasonData.constructorStandings;
 
   // Strict descending points mathematical invariant enforcement
   const sortedDriverStandings = useMemo(() => {
@@ -100,7 +131,9 @@ export const SeasonDashboard: React.FC<SeasonDashboardProps> = ({
               {activeCategoryInfo?.tagline}
             </p>
             <p className="text-[11px] text-amber-300/80 mt-2 font-mono">
-              {seasonData.dataSource}
+              {liveF1Standings
+                ? 'Live standings verified from the Jolpica F1 feed'
+                : seasonData.dataSource}
             </p>
           </div>
         </div>
