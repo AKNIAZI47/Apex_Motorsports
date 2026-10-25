@@ -80,16 +80,9 @@ export const NewsPanel: React.FC<Props> = ({ initialDiscipline = 'ALL' }) => {
       {/* Sleek Professional Wire Header */}
       <div className="p-5 bg-[#121215] border border-white/10 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#ff1744] uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Official Motorsport News Wire</span>
-          </div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight mt-1">
+          <h2 className="text-2xl font-black text-white uppercase tracking-tight">
             {selectedDiscipline === 'ALL' ? 'All Motorsport Dispatches' : `${MOTORSPORT_CATEGORIES[selectedDiscipline]?.name || selectedDiscipline} News Wire`}
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Real-time text bulletins, telemetry debriefs, and race steward classifications
-          </p>
         </div>
 
         {/* Action Bar */}
@@ -215,8 +208,7 @@ export const NewsPanel: React.FC<Props> = ({ initialDiscipline = 'ALL' }) => {
                 </div>
 
                 {/* Footer read link */}
-                <div className="pl-2 mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-mono text-slate-400">
-                  <span className="text-[11px] text-slate-500">Official Motorsport Dispatch</span>
+                <div className="pl-2 mt-4 pt-3 border-t border-white/5 flex items-center justify-end text-xs font-mono text-slate-400">
                   <span className="text-[#ff1744] font-bold group-hover:underline flex items-center gap-1">
                     Read Report <ChevronRight className="w-3.5 h-3.5" />
                   </span>
@@ -282,7 +274,7 @@ export const NewsPanel: React.FC<Props> = ({ initialDiscipline = 'ALL' }) => {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors"
               >
-                <span>Official Source Portal</span>
+                <span>Open article</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
 

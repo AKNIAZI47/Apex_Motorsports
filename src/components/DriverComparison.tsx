@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trophy, Award, Zap, Flag, ArrowRightLeft, Shield, Gauge, Activity, Compass, Flame } from 'lucide-react';
+import { Trophy, Award, Zap, Flag, Shield, Gauge, Activity, Compass, Flame } from 'lucide-react';
 import { Driver, MotorsportCategory } from '../types';
 import { getAllMotorsportDrivers, ALL_CATEGORY_STANDINGS } from '../data/allMotorsportStandings';
 
@@ -288,16 +288,9 @@ export const DriverComparison: React.FC<Props> = ({
       <div className="bg-[#121215] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#ff1744] tracking-widest uppercase">
-              <ArrowRightLeft className="w-3.5 h-3.5" />
-              <span>Direct Telemetric Comparison</span>
-            </div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tight mt-1">
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight">
               Head-to-Head Driver & Champion Telemetry
             </h2>
-            <p className="text-sm text-slate-400">
-              Benchmark drivers across telemetry, speed, consistency, and honors
-            </p>
           </div>
 
           {/* Discipline Switcher */}
